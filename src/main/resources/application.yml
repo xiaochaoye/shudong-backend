@@ -1,0 +1,40 @@
+# 应用服务 WEB 访问端口
+server:
+  port: 8080
+
+spring:
+  mail:
+    host: smtp.163.com
+    port: 465
+    username: wy12313412345@163.com
+    password: GTaxRV4rVjGZ3U9C
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      timeout: 5000
+      connection-timeout: 5000
+      write-timeout: 5000
+      mail:
+        smtp:
+          socketFactoryClass: javax.net.ssl.SSLSocketFactory
+          debug: true
+          auth: true
+          # starttls:
+          #   enable: true
+          ssl:
+            enable: true
+            trust: smtp.163.com
+
+springdoc:
+  api-docs:
+    enabled: true
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.chao.shudongbackend.controller
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+  openapi:
+    enable: true
