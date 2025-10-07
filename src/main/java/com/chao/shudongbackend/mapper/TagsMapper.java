@@ -1,6 +1,9 @@
 package com.chao.shudongbackend.mapper;
 
 import com.chao.shudongbackend.model.entity.Tags;
+
+import org.apache.ibatis.annotations.Mapper;
+
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -9,6 +12,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @createDate 2025-10-05 23:04:30
 * @Entity com.chao.shudongbackend.model.entity.Tags
 */
+@Mapper
 public interface TagsMapper extends BaseMapper<Tags> {
 
 }

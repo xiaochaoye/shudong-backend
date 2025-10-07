@@ -55,16 +55,20 @@ CREATE TABLE tags (
 
 
 -- -----------------------------------------------
--- 表4: post_tags - 帖子与标签的多对多关联表
+-- 表4: post_tags - 帖子与标签的多对多关联表（修复版）
 -- -----------------------------------------------
+-- 先创建带自增主键的新结构
 CREATE TABLE post_tags (
+    id BIGINT AUTO_INCREMENT COMMENT '主键ID，自增',
     post_id BIGINT NOT NULL COMMENT '帖子ID，外键',
     tag_id BIGINT NOT NULL COMMENT '标签ID，外键',
-    PRIMARY KEY (post_id, tag_id),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_post_tag (post_id, tag_id) COMMENT '确保帖子与标签的唯一关联',
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+    INDEX idx_post_id (post_id),
     INDEX idx_tag_id (tag_id)
-) COMMENT='帖子与标签的关联表，实现多对多关系';
+) COMMENT='帖子与标签的关联表，实现多对多关系，使用代理主键 id 支持 MyBatis-Plus';
 
 
 -- -----------------------------------------------

@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 
 /**
 * @author test
-* @description 针对表【post_tags(帖子与标签的关联表，实现多对多关系)】的数据库操作Service实现
-* @createDate 2025-10-05 23:04:29
+* @description 针对表【post_tags(帖子与标签的关联表，实现多对多关系，使用代理主键 id 支持 MyBatis-Plus)】的数据库操作Service实现
+* @createDate 2025-10-07 21:44:42
 */
 @Service
 public class PostTagsServiceImpl extends ServiceImpl<PostTagsMapper, PostTags>

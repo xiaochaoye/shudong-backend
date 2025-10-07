@@ -69,36 +69,8 @@
             <option name="tableUIInfoList">
               <list>
                 <TableUIInfo>
-                  <option name="className" value="AdminActions" />
-                  <option name="tableName" value="admin_actions" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Comments" />
-                  <option name="tableName" value="comments" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Likes" />
-                  <option name="tableName" value="likes" />
-                </TableUIInfo>
-                <TableUIInfo>
                   <option name="className" value="PostTags" />
                   <option name="tableName" value="post_tags" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Posts" />
-                  <option name="tableName" value="posts" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Replies" />
-                  <option name="tableName" value="replies" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Tags" />
-                  <option name="tableName" value="tags" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Users" />
-                  <option name="tableName" value="users" />
                 </TableUIInfo>
               </list>
             </option>
