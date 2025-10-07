@@ -55,9 +55,8 @@ CREATE TABLE tags (
 
 
 -- -----------------------------------------------
--- 表4: post_tags - 帖子与标签的多对多关联表（修复版）
+-- 表4: post_tags - 帖子与标签的多对多关联表
 -- -----------------------------------------------
--- 先创建带自增主键的新结构
 CREATE TABLE post_tags (
     id BIGINT AUTO_INCREMENT COMMENT '主键ID，自增',
     post_id BIGINT NOT NULL COMMENT '帖子ID，外键',
