@@ -14,7 +14,7 @@ import com.chao.shudongbackend.service.MailService;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
-@RequestMapping("/api/email")
+@RequestMapping("/email")
 public class MailController {
 
     @Autowired

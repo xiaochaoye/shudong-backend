@@ -39,8 +39,8 @@ public class Result<T> {
      * @param <T>
      * @return
      */
-    public static <T> Result<T> success() {
-        return new Result<T>(200, "操作成功", null);
+    public static <T> Result<Void> success() {
+        return new Result<>(200, "操作成功", null);
     }
     
     /**
@@ -49,8 +49,8 @@ public class Result<T> {
      * @param message
      * @return
      */
-    public static <T> Result<T> success(String message) {
-        return new Result<T>(200, message, null);
+    public static <T> Result<Void> success(String message) {
+        return new Result<>(200, message, null);
     }
 
     /**

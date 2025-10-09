@@ -3,6 +3,8 @@ package com.chao.shudongbackend.config;
 import com.chao.shudongbackend.exception.JwtAccessDeniedHandler;
 import com.chao.shudongbackend.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -31,10 +33,13 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableConfigurationProperties(SecurityProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+
+    private final SecurityProperties securityProperties;
 
     /**
      * 密码编码器
@@ -66,19 +71,12 @@ public class SecurityConfig {
             .authorizeRequests()
                 // 公开访问的接口
                 .antMatchers(
-                    "/api/auth/**",           // 认证相关接口
-                    "/api/users/register",    // 用户注册
-                    "/api/users/login",       // 用户登录
-                    "/api/posts/public/**",   // 公开帖子接口
-                    "/api/comments/public/**", // 公开评论接口
-                    "/doc.html",              // Knife4j文档
-                    "/webjars/**",            // Knife4j静态资源
-                    "/v3/api-docs/**",        // OpenAPI文档
-                    "/favicon.ico",           // 网站图标
-                    "/error"                  // 错误页面
+                    securityProperties.getPublicEndpoints().toArray(String[]::new)
                 ).permitAll()
                 // 管理员接口
-                .antMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers(
+                    securityProperties.getAdminEndpoints().toArray(String[]::new)
+                ).hasRole("ADMIN")
                 // 其他所有请求都需要认证
                 .anyRequest().authenticated().and()
             // 添加JWT认证过滤器

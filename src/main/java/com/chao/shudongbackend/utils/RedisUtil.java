@@ -1,5 +1,96 @@
 package com.chao.shudongbackend.utils;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+
+@Component
 public class RedisUtil {
-    
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    /**
+     * 设置缓存
+     * @param key 键
+     * @param value 值
+     * @param time 过期时间（秒）
+     */
+    public void set(String key, Object value, long time) {
+        redisTemplate.opsForValue().set(key, value, time, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 获取缓存
+     * @param key 键
+     * @return 值
+     */
+    public Object get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    /**
+     * 删除缓存
+     * @param key 键
+     * @return 是否删除成功
+     */
+    public Boolean delete(String key) {
+        return redisTemplate.delete(key);
+    }
+
+    /**
+     * 判断key是否存在
+     * @param key 键
+     * @return 是否存在
+     */
+    public Boolean hasKey(String key) {
+        return redisTemplate.hasKey(key);
+    }
+
+    /**
+     * 设置验证码
+     * @param email 邮箱
+     * @param code 验证码
+     * @param type 类型（register/reset）
+     */
+    public void setVerificationCode(String email, String code, String type) {
+        String key = type + "_code:" + email;
+        set(key, code, 300); // 5分钟过期
+    }
+
+    /**
+     * 获取验证码
+     * @param email 邮箱
+     * @param type 类型（register/reset）
+     * @return 验证码
+     */
+    public String getVerificationCode(String email, String type) {
+        String key = type + "_code:" + email;
+        Object code = get(key);
+        return code != null ? code.toString() : null;
+    }
+
+    /**
+     * 验证验证码
+     * @param email 邮箱
+     * @param code 验证码
+     * @param type 类型（register/reset）
+     * @return 是否验证成功
+     */
+    public boolean verifyCode(String email, String code, String type) {
+        String storedCode = getVerificationCode(email, type);
+        return storedCode != null && storedCode.equals(code);
+    }
+
+    /**
+     * 删除验证码
+     * @param email 邮箱
+     * @param type 类型（register/reset）
+     */
+    public void deleteVerificationCode(String email, String type) {
+        String key = type + "_code:" + email;
+        delete(key);
+    }
 }

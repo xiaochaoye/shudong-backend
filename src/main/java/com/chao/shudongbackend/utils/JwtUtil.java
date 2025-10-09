@@ -41,14 +41,14 @@ public class JwtUtil {
     /**
      * 生成JWT令牌
      *
-     * @param username 用户名
+     * @param email 用户邮箱（唯一）
      * @param role 用户角色
      * @return JWT令牌
      */
-    public String generateToken(String username, String role) {
+    public String generateToken(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        return createToken(claims, username);
+        return createToken(claims, email);
     }
 
     /**
@@ -158,9 +158,9 @@ public class JwtUtil {
     public String refreshToken(String token) {
         try {
             Claims claims = getClaimsFromToken(token);
-            String username = claims.getSubject();
+            String email = claims.getSubject();
             String role = claims.get("role", String.class);
-            return generateToken(username, role);
+            return generateToken(email, role);
         } catch (Exception e) {
             log.error("刷新令牌失败: {}", e.getMessage());
             throw new RuntimeException("令牌刷新失败");

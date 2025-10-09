@@ -40,7 +40,8 @@ spring:
     url: jdbc:mysql://localhost:3306/shudong?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: 123456  
-
+  jackson:
+    time-zone: Asia/Shanghai  
 
 springdoc:
   api-docs:
@@ -58,7 +59,7 @@ knife4j:
 
 # JWT配置
 jwt:
-  secret: shudong-backend-secret-key-2025
+  secret: c2h1ZG9uZy1iYWNrZW5kLXNlY3JldC1rZXktMjAyNQ==
   expiration: 86400000  # 默认24小时（毫秒）
   header: Authorization
   prefix: Bearer
@@ -72,17 +73,17 @@ security:
     allow-credentials: true
     max-age: 3600
   public-endpoints:
-    - "/auth/**"
-    - "/users/register"
-    - "/users/login"
-    - "/posts/public/**"
-    - "/comments/public/**"
-    - "/doc.html"
-    - "/webjars/**"
-    - "/v3/api-docs/**"
-    - "/favicon.ico"
-    - "/error"
+    - "/auth/**"            # 认证相关接口
+    - "/users/**"           # 用户相关接口
+    - "/users/register/**"  # 用户注册相关接口
+    - "/users/login"        # 用户登录接口
+    - "/users/forgot-password/**" # 忘记密码相关接口
+    - "/posts/public/**"    # 公开帖子接口
+    - "/comments/public/**" # 公开评论接口
+    - "/doc.html"               # Knife4j文档
+    - "/webjars/**"             # Knife4j静态资源
+    - "/v3/api-docs/**"         # OpenAPI文档
+    - "/favicon.ico"            # 网站图标
+    - "/error"                  # 错误页面
   admin-endpoints:
     - "/admin/**"
-
-
