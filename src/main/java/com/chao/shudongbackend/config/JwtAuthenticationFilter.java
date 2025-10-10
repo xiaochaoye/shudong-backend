@@ -1,6 +1,7 @@
 package com.chao.shudongbackend.config;
 
 import com.chao.shudongbackend.utils.JwtUtil;
+import com.chao.shudongbackend.utils.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +31,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final RedisUtil redisUtil;
 
     /**
      * 执行JWT令牌验证
@@ -47,26 +49,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 从请求头获取JWT令牌
             String token = getJwtFromRequest(request);
             
-            if (token != null && jwtUtil.validateToken(token)) {
-                // 从令牌中获取用户名
-                String username = jwtUtil.getUsernameFromToken(token);
+            // 检查令牌是否存在且有效
+            if (token != null) {
+                // 首先检查令牌是否在黑名单中（用户已登出）
+                if (redisUtil.isInBlacklist(token)) {
+                    log.warn("JWT令牌在黑名单中，拒绝访问 - 令牌: {}", token.substring(0, Math.min(token.length(), 20)) + "...");
+                    // 继续过滤器链，由后续的异常处理器处理认证失败
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 
-                // 从令牌中获取角色信息
-                String role = jwtUtil.getRoleFromToken(token);
-                
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    // 创建认证令牌
-                    List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_" + role)
-                    );
+                // 验证令牌的有效性
+                if (jwtUtil.validateToken(token)) {
+                    // 从令牌中获取用户邮件地址
+                    String userEmail = jwtUtil.getEmailFromToken(token);
                     
-                    UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    // 从令牌中获取角色信息
+                    String role = jwtUtil.getRoleFromToken(token);
                     
-                    // 设置认证信息到SecurityContext
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    
-                    log.debug("JWT认证成功 - 用户: {}, 角色: {}", username, role);
+                    if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        // 创建认证令牌
+                        List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                            new SimpleGrantedAuthority("ROLE_" + role)
+                        );
+                        
+                        UsernamePasswordAuthenticationToken authentication = 
+                            new UsernamePasswordAuthenticationToken(userEmail, null, authorities);
+                        
+                        // 设置认证信息到SecurityContext
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        
+                        log.debug("JWT认证成功 - 用户邮件地址: {}, 角色: {}", userEmail, role);
+                    }
                 }
             }
         } catch (Exception e) {

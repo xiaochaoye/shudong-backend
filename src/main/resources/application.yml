@@ -72,7 +72,7 @@ security:
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
-  public-endpoints:
+  public-endpoints:         # 添加接口前去掉 "/api"
     - "/auth/**"            # 认证相关接口
     - "/users/**"           # 用户相关接口
     - "/users/register/**"  # 用户注册相关接口
@@ -85,5 +85,6 @@ security:
     - "/v3/api-docs/**"         # OpenAPI文档
     - "/favicon.ico"            # 网站图标
     - "/error"                  # 错误页面
+    - "/email/**"           # 发送安慰邮件接口（后面需弃用）
   admin-endpoints:
     - "/admin/**"

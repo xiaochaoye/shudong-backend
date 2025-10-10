@@ -50,13 +50,9 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         
         // 存储验证码到Redis
         redisUtil.setVerificationCode(email, code, "register");
-
-        // 发送邮件
-        String subject = "树洞 - 注册验证码";
-        String content = "您的注册验证码是：" + code + "，有效期为5分钟。";
         
         try {
-            mailService.sendHtmlEmail(email, subject, content, "noreply@shudong.com");
+            mailService.sendVerificationEmail(email, "树洞 - 注册验证码", code);
             return true;
         } catch (Exception e) {
             throw new BusinessException("邮件发送失败：" + e.getMessage());

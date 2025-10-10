@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>您的验证码</title>
+    <style type="text/css">
+        /* 邮件兼容性基础样式 */
+        body, table, td, div, p, a {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333333;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #4a90e2;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+        }
+        .verification-code {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 15px 25px;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #4a90e2;
+            background-color: #f0f8ff;
+            border: 2px dashed #4a90e2;
+            border-radius: 6px;
+            word-spacing: 15px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 15px;
+            text-align: center;
+            font-size: 14px;
+            color: #777777;
+        }
+        .footer a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .email-container {
+                margin: 10px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .verification-code {
+                font-size: 24px;
+                letter-spacing: 6px;
+                word-spacing: 10px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>树洞验证码</h1>
+        </div>
+
+        <div class="content">
+            <p>您好，您正在请求验证您的邮箱。请在应用中输入以下验证码：</p>
+
+            <div class="verification-code" th:text="${verificationCode}">123456</div>
+
+            <p>该验证码 <span style="font-weight: bold;">5分钟内</span> 有效，请尽快使用。</p>
+            <p>如果不是您本人操作，请忽略此邮件。</p>
+        </div>
+    </div>
+</body>
+</html>

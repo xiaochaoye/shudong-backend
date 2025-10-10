@@ -93,4 +93,33 @@ public class RedisUtil {
         String key = type + "_code:" + email;
         delete(key);
     }
+
+    /**
+     * 将令牌加入黑名单
+     * @param token JWT令牌
+     * @param expirationTime 过期时间（秒）
+     */
+    public void addToBlacklist(String token, long expirationTime) {
+        String key = "blacklist:" + token;
+        set(key, "revoked", expirationTime);
+    }
+
+    /**
+     * 检查令牌是否在黑名单中
+     * @param token JWT令牌
+     * @return 是否在黑名单中
+     */
+    public boolean isInBlacklist(String token) {
+        String key = "blacklist:" + token;
+        return hasKey(key);
+    }
+
+    /**
+     * 从黑名单中移除令牌（用于清理）
+     * @param token JWT令牌
+     */
+    public void removeFromBlacklist(String token) {
+        String key = "blacklist:" + token;
+        delete(key);
+    }
 }

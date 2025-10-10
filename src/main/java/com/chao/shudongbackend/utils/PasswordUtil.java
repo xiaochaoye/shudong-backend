@@ -40,13 +40,12 @@ public class PasswordUtil {
     }
 
     /**
-     * 生成随机用户名（邮箱前缀 + 4位随机数字）
+     * 生成随机用户名（“用户” + 邮箱前缀）
      * @param email 邮箱
      * @return 用户名
      */
     public String generateUsername(String email) {
         String emailPrefix = email.split("@")[0];
-        int randomNum = (int) ((Math.random() * 9 + 1) * 1000);
-        return emailPrefix + randomNum;
+        return "用户" + emailPrefix;
     }
 }

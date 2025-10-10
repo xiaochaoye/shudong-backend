@@ -16,7 +16,9 @@ import java.util.Map;
 /**
  * JWT工具类
  * 
- * <p>提供JWT令牌的生成、验证和解析功能</p>
+ * <p>
+ * 提供JWT令牌的生成、验证和解析功能
+ * </p>
  * 
  * @author chao
  * @version 1.0
@@ -42,7 +44,7 @@ public class JwtUtil {
      * 生成JWT令牌
      *
      * @param email 用户邮箱（唯一）
-     * @param role 用户角色
+     * @param role  用户角色
      * @return JWT令牌
      */
     public String generateToken(String email, String role) {
@@ -57,7 +59,7 @@ public class JwtUtil {
      * @param token JWT令牌
      * @return 用户名
      */
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         return getClaimsFromToken(token).getSubject();
     }
 
@@ -90,7 +92,7 @@ public class JwtUtil {
     /**
      * 创建JWT令牌
      *
-     * @param claims 声明信息
+     * @param claims  声明信息
      * @param subject 主题（用户名）
      * @return JWT令牌
      */
@@ -98,13 +100,8 @@ public class JwtUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(now).setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
     }
 
     /**
@@ -114,11 +111,7 @@ public class JwtUtil {
      * @return 声明信息
      */
     private Claims getClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
     }
 
     /**
@@ -133,7 +126,7 @@ public class JwtUtil {
     /**
      * 检查令牌是否即将过期（在指定时间内）
      *
-     * @param token JWT令牌
+     * @param token   JWT令牌
      * @param minutes 分钟数
      * @return 是否即将过期
      */
@@ -184,4 +177,19 @@ public class JwtUtil {
     public String getPrefix() {
         return prefix;
     }
+
+    /**
+     * 获取JWT令牌过期时间
+     * @param token
+     * @return
+     */
+    public Date getExpirationFromToken(String token) {
+        try {
+            return getClaimsFromToken(token).getExpiration();
+        } catch (Exception e) {
+            log.warn("获取令牌过期时间失败: {}", e.getMessage());
+            throw new RuntimeException("令牌解析失败");
+        }
+    }
+
 }

@@ -2,6 +2,7 @@ package com.chao.shudongbackend.config;
 
 import com.chao.shudongbackend.exception.JwtAccessDeniedHandler;
 import com.chao.shudongbackend.utils.JwtUtil;
+import com.chao.shudongbackend.utils.RedisUtil;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -38,6 +39,8 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    
+    private final RedisUtil redisUtil;
 
     private final SecurityProperties securityProperties;
 
@@ -80,7 +83,7 @@ public class SecurityConfig {
                 // 其他所有请求都需要认证
                 .anyRequest().authenticated().and()
             // 添加JWT认证过滤器
-            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class)
             // 配置异常处理
             .exceptionHandling()
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
