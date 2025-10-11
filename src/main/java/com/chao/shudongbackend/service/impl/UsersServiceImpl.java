@@ -75,6 +75,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
             throw new BusinessException("该邮箱已被注册");
         }
 
+        if (!passwordUtil.validatePasswordFormat(request.getPassword())) {
+            throw new BusinessException("密码格式不符合要求：长度8-20位，必须包含字母、特殊符号和数字");
+        }
+
         // 创建用户
         Users user = new Users();
         user.setEmail(request.getEmail());
@@ -145,13 +149,9 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         
         // 存储验证码到Redis
         redisUtil.setVerificationCode(email, code, "reset");
-
-        // 发送邮件
-        String subject = "树洞 - 重置密码验证码";
-        String content = "您的重置密码验证码是：" + code + "，有效期为5分钟。";
         
         try {
-            mailService.sendHtmlEmail(email, subject, content, "noreply@shudong.com");
+            mailService.sendVerificationEmail(email, "树洞 - 重置密码验证码", code);
             return true;
         } catch (Exception e) {
             throw new BusinessException("邮件发送失败：" + e.getMessage());
@@ -178,6 +178,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         // 检查账号是否启用
         if (user.getIsActive() == 0) {
             throw new BusinessException("账号已被禁用");
+        }
+
+        if (!passwordUtil.validatePasswordFormat(newPassword)) {
+            throw new BusinessException("新密码格式不符合要求：长度8-20位，必须包含字母、特殊符号和数字");
         }
 
         // 更新密码

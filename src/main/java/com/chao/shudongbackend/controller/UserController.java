@@ -136,9 +136,7 @@ public class UserController {
     /**
      * 用户登出
      * 
-     * <p>
      * 将当前JWT令牌加入黑名单，使其失效
-     * </p>
      * 
      * @return 登出结果
      */
