@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.chao.shudongbackend.model.dto.LoginRequestDTO;
@@ -27,19 +28,16 @@ import com.chao.shudongbackend.utils.RedisUtil;
 @Slf4j
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor   // 构造器注入，自动生成 final 字段的构造函数
 public class UserController {
 
-    @Autowired
-    private UsersService usersService;
+    private final UsersService usersService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private RedisUtil redisUtil;
+    private final RedisUtil redisUtil;
 
-    @Autowired
-    private HttpServletRequest request;
+    private final HttpServletRequest request;
 
     /**
      * 发送注册验证码

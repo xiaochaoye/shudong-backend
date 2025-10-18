@@ -18,8 +18,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/email")
 public class MailController {
 
+    // 构造器注入，不使用注解版
+    private final MailService mailService;
+
     @Autowired
-    private MailService mailService;
+    public MailController (MailService mailService) {
+        this.mailService = mailService;
+    }
 
     @PostMapping("/send_html")
     public Result<Void> sendHtmlMail(@RequestBody @Valid MailRequestDTO mailRequestDTO) {
