@@ -2,6 +2,7 @@ package com.chao.shudongbackend.service;
 
 import com.chao.shudongbackend.model.dto.LoginRequestDTO;
 import com.chao.shudongbackend.model.dto.RegisterRequestDTO;
+import com.chao.shudongbackend.model.dto.UserRequestDTO;
 import com.chao.shudongbackend.model.entity.Users;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -48,4 +49,12 @@ public interface UsersService extends IService<Users> {
      * @return 是否重置成功
      */
     boolean resetPassword(String email, String code, String newPassword);
+
+    /**
+     * 更新用户名和/或头像
+     * @param userId 用户ID
+     * @param request 更新请求
+     * @return 更新后的用户信息
+     */
+    Users updateProfile(Long userId, UserRequestDTO request);
 }

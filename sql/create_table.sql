@@ -13,8 +13,7 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT FALSE COMMENT '是否为管理员',
     PRIMARY KEY (id),
     INDEX idx_email (email),
-    INDEX idx_username (username),
-    INDEX idx_avatar (avatar) -- 可选：如果需要按头像查询（一般不需要）
+    INDEX idx_username (username)
 ) COMMENT='用户表，存储注册用户信息';
 
 

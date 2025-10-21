@@ -6,11 +6,16 @@ import com.chao.shudongbackend.exception.BusinessException;
 import com.chao.shudongbackend.model.dto.LoginRequestDTO;
 import com.chao.shudongbackend.model.dto.RegisterRequestDTO;
 import com.chao.shudongbackend.model.entity.Users;
+import com.chao.shudongbackend.model.dto.UserRequestDTO;
 import com.chao.shudongbackend.service.MailService;
 import com.chao.shudongbackend.service.UsersService;
 import com.chao.shudongbackend.mapper.UsersMapper;
 import com.chao.shudongbackend.utils.PasswordUtil;
 import com.chao.shudongbackend.utils.RedisUtil;
+import com.chao.shudongbackend.utils.UploadUtil;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +28,15 @@ import java.util.Date;
 * @createDate 2025-10-05 23:04:30
 */
 @Service
+@RequiredArgsConstructor
 public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
     implements UsersService{
 
-    @Autowired
-    private RedisUtil redisUtil;
+    private final RedisUtil redisUtil;
 
-    @Autowired
-    private PasswordUtil passwordUtil;
+    private final PasswordUtil passwordUtil;
 
-    @Autowired
-    private MailService mailService;
+    private final MailService mailService;
 
     @Override
     public boolean sendRegisterCode(String email) {
@@ -195,5 +198,63 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         }
 
         return updated;
+    }
+
+    @Autowired
+    private UploadUtil uploadUtil;
+
+    @Override
+    @Transactional
+    public Users updateProfile(Long userId, UserRequestDTO request) {
+        // 查询用户
+        Users user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+
+        // 检查账号是否启用
+        if (user.getIsActive() == 0) {
+            throw new BusinessException("账号已被禁用");
+        }
+
+        boolean hasUpdate = false;
+
+        // 更新用户名（如果提供）
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            String newUsername = request.getUsername().trim();
+            // 检查用户名长度
+            if (newUsername.length() < 1 || newUsername.length() > 50) {
+                throw new BusinessException("用户名长度必须在1-50个字符之间");
+            }
+            user.setUsername(newUsername);
+            hasUpdate = true;
+        }
+
+        // 更新头像（如果提供）
+        if (request.getAvatarFile() != null && !request.getAvatarFile().isEmpty()) {
+            try {
+                String avatarUrl = uploadUtil.uploadAvatar(request.getAvatarFile());
+                user.setAvatar(avatarUrl);
+                hasUpdate = true;
+            } catch (Exception e) {
+                throw new BusinessException("头像上传失败: " + e.getMessage());
+            }
+        }
+
+        // 如果没有提供任何更新内容
+        if (!hasUpdate) {
+            throw new BusinessException("请提供要更新的用户名或头像");
+        }
+
+        // 更新最后修改时间
+        user.setUpdatedAt(new Date());
+
+        // 保存更新
+        boolean updated = this.updateById(user);
+        if (!updated) {
+            throw new BusinessException("更新用户资料失败");
+        }
+
+        return user;
     }
 }

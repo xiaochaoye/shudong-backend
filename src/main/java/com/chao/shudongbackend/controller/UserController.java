@@ -7,7 +7,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.chao.shudongbackend.model.dto.LoginRequestDTO;
 import com.chao.shudongbackend.model.dto.RegisterRequestDTO;
 import com.chao.shudongbackend.model.dto.Result;
+import com.chao.shudongbackend.model.dto.UserRequestDTO;
 import com.chao.shudongbackend.model.entity.Users;
 import com.chao.shudongbackend.service.UsersService;
 import com.chao.shudongbackend.utils.JwtUtil;
@@ -28,7 +30,7 @@ import com.chao.shudongbackend.utils.RedisUtil;
 @Slf4j
 @RestController
 @RequestMapping("/users")
-@RequiredArgsConstructor   // 构造器注入，自动生成 final 字段的构造函数
+@RequiredArgsConstructor // 构造器注入，自动生成 final 字段的构造函数
 public class UserController {
 
     private final UsersService usersService;
@@ -132,6 +134,50 @@ public class UserController {
     }
 
     /**
+     * 更新用户资料（名称和头像）
+     * 
+     * @param request 更新请求，包含用户名和头像文件
+     * @return 更新结果
+     */
+    @PostMapping("/profile/update")
+    public Result<Map<String, Object>> updateProfile(@ModelAttribute @Valid UserRequestDTO request) {
+        try {
+            // 从请求头中获取JWT令牌
+            String token = getJwtFromRequest();
+            if (token == null) {
+                return Result.error("未找到有效的JWT令牌");
+            }
+
+            // 验证令牌有效性
+            if (!jwtUtil.validateToken(token)) {
+                return Result.error("无效的JWT令牌");
+            }
+
+            // 从令牌中获取邮箱
+            String email = jwtUtil.getEmailFromToken(token);
+
+            // 通过邮箱查询用户
+            QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("email", email);
+            Users currentUser = usersService.getOne(queryWrapper);
+            if (currentUser == null) {
+                return Result.error("用户不存在");
+            }
+
+            // 调用服务更新资料
+            Users updatedUser = usersService.updateProfile(currentUser.getId(), request);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("username", updatedUser.getUsername());
+            data.put("avatarUrl", updatedUser.getAvatar());
+
+            return Result.success("资料更新成功", data);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 用户登出
      * 
      * 将当前JWT令牌加入黑名单，使其失效
@@ -206,4 +252,5 @@ public class UserController {
             return 3600;
         }
     }
+
 }

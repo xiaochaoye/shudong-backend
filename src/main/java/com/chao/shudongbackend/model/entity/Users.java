@@ -56,6 +56,11 @@ public class Users implements Serializable {
      */
     private Integer isAdmin;
 
+    /**
+     * 用户头像URL
+     */
+    private String avatar;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
@@ -93,6 +98,7 @@ public class Users implements Serializable {
         result = prime * result + ((getUpdatedAt() == null) ? 0 : getUpdatedAt().hashCode());
         result = prime * result + ((getIsActive() == null) ? 0 : getIsActive().hashCode());
         result = prime * result + ((getIsAdmin() == null) ? 0 : getIsAdmin().hashCode());
+        result = prime * result + ((getAvatar() == null) ? 0 : getAvatar().hashCode());
         return result;
     }
 
@@ -110,6 +116,7 @@ public class Users implements Serializable {
         sb.append(", updatedAt=").append(updatedAt);
         sb.append(", isActive=").append(isActive);
         sb.append(", isAdmin=").append(isAdmin);
+        sb.append(", avatar=").append(avatar);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();
