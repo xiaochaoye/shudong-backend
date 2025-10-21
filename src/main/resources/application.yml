@@ -9,11 +9,16 @@ spring:
     name: shudong-backend
   profiles:
     active: local
+  servlet:
+    multipart:
+      max-file-size: 20MB         # 单个文件最大 10MB
+      max-request-size: 100MB     # 一次请求（多个文件）总大小上限 (maybe以后要用)
+      enabled: true               
   mail:
     host: smtp.163.com
     port: 465
-    username: wy12313412345@163.com
-    password: GTaxRV4rVjGZ3U9C
+    # username: 邮件地址
+    # password: 授权码（之前的授权码已作废）
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -72,19 +77,28 @@ security:
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
-  public-endpoints:         # 添加接口前去掉 "/api"
-    - "/auth/**"            # 认证相关接口
-    - "/users/**"           # 用户相关接口
-    - "/users/register/**"  # 用户注册相关接口
-    - "/users/login"        # 用户登录接口
+  public-endpoints:               # 添加接口前去掉 "/api"
+    - "/auth/**"                  # 认证相关接口
+    - "/users/**"                 # 用户相关接口
+    - "/users/register/**"        # 用户注册相关接口
+    - "/users/login"              # 用户登录接口
     - "/users/forgot-password/**" # 忘记密码相关接口
-    - "/posts/public/**"    # 公开帖子接口
-    - "/comments/public/**" # 公开评论接口
-    - "/doc.html"               # Knife4j文档
-    - "/webjars/**"             # Knife4j静态资源
-    - "/v3/api-docs/**"         # OpenAPI文档
-    - "/favicon.ico"            # 网站图标
-    - "/error"                  # 错误页面
-    - "/email/**"           # 发送安慰邮件接口（后面需弃用）
+    - "/posts/public/**"          # 公开帖子接口
+    - "/comments/public/**"       # 公开评论接口
+    - "/doc.html"                 # Knife4j文档
+    - "/webjars/**"               # Knife4j静态资源
+    - "/v3/api-docs/**"           # OpenAPI文档
+    - "/favicon.ico"              # 网站图标          
+    - "/error"                    # 错误页面
+    - "/email/**"                 # 发送安慰邮件接口（后面需弃用）
   admin-endpoints:
     - "/admin/**"
+
+cos:
+  client:
+    # accessKey: 你的accessKey
+    # secretKey: 你的secretKey
+    # region: 你的区域
+    # bucket: 桶名称
+    # cosHost: https://xxxx.myqcloud.com
+    # expireTime: 3600000

@@ -6,13 +6,15 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE COMMENT '邮箱，唯一，用于登录',
     username VARCHAR(50) NOT NULL COMMENT '用户名，可显示在帖子上',
     password_hash VARCHAR(255) NOT NULL COMMENT '密码哈希值（使用 bcrypt 加密，包含内置 salt）',
+    avatar VARCHAR(512) DEFAULT NULL COMMENT '用户头像图片的URL链接，可为空',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
     is_active BOOLEAN DEFAULT TRUE COMMENT '账号是否启用（软删除用）',
     is_admin BOOLEAN DEFAULT FALSE COMMENT '是否为管理员',
     PRIMARY KEY (id),
     INDEX idx_email (email),
-    INDEX idx_username (username)
+    INDEX idx_username (username),
+    INDEX idx_avatar (avatar) -- 可选：如果需要按头像查询（一般不需要）
 ) COMMENT='用户表，存储注册用户信息';
 
 
