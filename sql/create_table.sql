@@ -29,18 +29,42 @@ CREATE TABLE posts (
     is_anonymous BOOLEAN DEFAULT FALSE COMMENT '是否匿名发布',
     is_published BOOLEAN DEFAULT TRUE COMMENT '是否已发布（用于审核流程）',
     view_count INT UNSIGNED DEFAULT 0 COMMENT '浏览次数，用于热门排序',
+    
+    -- 许愿池专用字段
+    wish_status ENUM('PENDING', 'COMPLETED') DEFAULT 'PENDING' COMMENT '愿望状态：PENDING=待实现，COMPLETED=已实现',
+    completed_at TIMESTAMP NULL DEFAULT NULL COMMENT '愿望完成时间',
+    completed_by BIGINT NULL DEFAULT NULL COMMENT '完成愿望的用户ID，外键关联users.id',
+    like_count INT UNSIGNED DEFAULT 0 COMMENT '点赞数',
+    daily_random_count INT UNSIGNED DEFAULT 0 COMMENT '每日随机抽取次数（用于限制）',
+    last_random_date DATE NULL DEFAULT NULL COMMENT '最后随机抽取日期（用于重置计数）',
+    
+    -- 时间戳字段
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
     deleted_at TIMESTAMP NULL DEFAULT NULL COMMENT '软删除时间，为空表示未删除',
+    
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (completed_by) REFERENCES users(id) ON DELETE SET NULL,
+    
+    -- 基础索引
     INDEX idx_user_id (user_id),
     INDEX idx_post_type (post_type),
     INDEX idx_created_at (created_at),
     INDEX idx_deleted_at (deleted_at),
     INDEX idx_is_published (is_published),
+    
+    -- 许愿池专用索引
+    INDEX idx_wish_status (wish_status),
+    INDEX idx_completed_at (completed_at),
+    INDEX idx_like_count (like_count),
+    INDEX idx_daily_random_count (daily_random_count),
+    INDEX idx_last_random_date (last_random_date),
+    
+    -- 全文搜索索引
     FULLTEXT idx_ft_title_content (title, content)
-) COMMENT='帖子表，支持快乐区、难过区、许愿池';
+) COMMENT='帖子表，支持快乐区、难过区、许愿池，包含许愿池专用字段';
+
 
 
 -- -----------------------------------------------

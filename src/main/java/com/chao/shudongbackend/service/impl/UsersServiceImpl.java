@@ -38,6 +38,8 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
 
     private final MailService mailService;
 
+    private final UploadUtil uploadUtil;
+
     @Override
     public boolean sendRegisterCode(String email) {
         // 检查邮箱是否已注册
@@ -199,9 +201,6 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
 
         return updated;
     }
-
-    @Autowired
-    private UploadUtil uploadUtil;
 
     @Override
     @Transactional

@@ -64,7 +64,7 @@ knife4j:
 
 # JWT配置
 jwt:
-  secret: c2h1ZG9uZy1iYWNrZW5kLXNlY3JldC1rZXktMjAyNQ==
+  secret: k3b7+9Xq2J8pZ1vT6wN5mR4sA0oL9nE7dH2cV8xQ1aP=
   expiration: 86400000  # 默认24小时（毫秒）
   header: Authorization
   prefix: Bearer
@@ -91,8 +91,13 @@ security:
     - "/favicon.ico"              # 网站图标          
     - "/error"                    # 错误页面
     - "/email/**"                 # 发送安慰邮件接口（后面需弃用）
+    - "/wishes/stats"             # 许愿池统计信息（总数、已实现数量、未实现数量）
   admin-endpoints:
     - "/admin/**"
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 cos:
   client:

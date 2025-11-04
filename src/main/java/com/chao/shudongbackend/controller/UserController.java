@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.chao.shudongbackend.model.dto.LoginRequestDTO;
@@ -142,19 +144,13 @@ public class UserController {
     @PostMapping("/profile/update")
     public Result<Map<String, Object>> updateProfile(@ModelAttribute @Valid UserRequestDTO request) {
         try {
-            // 从请求头中获取JWT令牌
-            String token = getJwtFromRequest();
-            if (token == null) {
-                return Result.error("未找到有效的JWT令牌");
+            // 从Spring Security认证信息中获取当前用户邮箱
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return Result.error("用户未登录");
             }
-
-            // 验证令牌有效性
-            if (!jwtUtil.validateToken(token)) {
-                return Result.error("无效的JWT令牌");
-            }
-
-            // 从令牌中获取邮箱
-            String email = jwtUtil.getEmailFromToken(token);
+            
+            String email = authentication.getName();
 
             // 通过邮箱查询用户
             QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
@@ -187,9 +183,8 @@ public class UserController {
     @PostMapping("/logout")
     public Result<Void> logout() {
         try {
-            // 从请求头中获取JWT令牌
+            // 从请求头中获取JWT令牌（登出时需要令牌本身加入黑名单）
             String token = getJwtFromRequest();
-
             if (token == null) {
                 return Result.error("未找到有效的JWT令牌");
             }
@@ -242,8 +237,7 @@ public class UserController {
             long remainingTimeMillis = expiration.getTime() - now.getTime();
             long remainingTimeSeconds = remainingTimeMillis / 1000;
 
-            // 这里简化处理，使用固定的剩余时间
-            // 实际应该从JWT令牌中解析exp字段
+            // 从JWT令牌中解析exp字段，动态计算剩余时间
             return Math.max(remainingTimeSeconds, 0);
 
         } catch (Exception e) {

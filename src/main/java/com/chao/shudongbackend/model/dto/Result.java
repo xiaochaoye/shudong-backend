@@ -1,6 +1,7 @@
 package com.chao.shudongbackend.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
 
 import lombok.Data;
 
@@ -11,11 +12,14 @@ import lombok.Data;
 @Data
 public class Result<T> {
     
+    @JsonView(Object.class)
     private int code;
+
+    @JsonView(Object.class)
     private String message;
 
-    // 仅当 data 不为 null 时序列化
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonView(Object.class)
     private T data;
 
     private Result(int code, String message, T data) {

@@ -71,6 +71,36 @@ public class Posts implements Serializable {
      */
     private Date deletedAt;
 
+    /**
+     * 愿望状态：PENDING=待实现，COMPLETED=已实现
+     */
+    private String wishStatus;
+
+    /**
+     * 愿望完成时间
+     */
+    private Date completedAt;
+
+    /**
+     * 完成愿望的用户ID，外键关联users.id
+     */
+    private Long completedBy;
+
+    /**
+     * 点赞数
+     */
+    private Integer likeCount;
+
+    /**
+     * 每日随机抽取次数（用于限制）
+     */
+    private Integer dailyRandomCount;
+
+    /**
+     * 最后随机抽取日期（用于重置计数）
+     */
+    private Date lastRandomDate;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
