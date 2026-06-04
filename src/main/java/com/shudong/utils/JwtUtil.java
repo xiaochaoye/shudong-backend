@@ -2,7 +2,6 @@ package com.shudong.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,8 +101,13 @@ public class JwtUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
-        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(now).setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
+        return Jwts.builder()
+            .claims(claims)            
+            .subject(subject)          
+            .issuedAt(now)             
+            .expiration(expiryDate)    
+            .signWith(getSigningKey()) 
+            .compact();
     }
 
     /**
@@ -113,7 +117,11 @@ public class JwtUtil {
      * @return 声明信息
      */
     private Claims getClaimsFromToken(String token) {
-        return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
+        return Jwts.parser()
+            .verifyWith(getSigningKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
     }
 
     /**

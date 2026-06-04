@@ -50,7 +50,7 @@ public class UserController {
      * @return 发送结果
      */
     @PostMapping("/register/send-code")
-    public Result<Void> sendRegisterCode(@RequestParam String email) {
+    public Result<Void> sendRegisterCode(@RequestParam(name = "email") String email) {
         try {
             boolean success = usersService.sendRegisterCode(email);
             return success ? Result.success("验证码发送成功") : Result.error("验证码发送失败");
@@ -107,7 +107,7 @@ public class UserController {
      * @return 发送结果
      */
     @PostMapping("/forgot-password/send-code")
-    public Result<Void> sendResetPasswordCode(@RequestParam String email) {
+    public Result<Void> sendResetPasswordCode(@RequestParam(name = "email") String email) {
         try {
             boolean success = usersService.sendResetPasswordCode(email);
             return success ? Result.success("验证码发送成功") : Result.error("验证码发送失败");
@@ -125,8 +125,8 @@ public class UserController {
      * @return 重置结果
      */
     @PostMapping("/forgot-password/reset")
-    public Result<Void> resetPassword(@RequestParam String email, @RequestParam String code,
-            @RequestParam String newPassword) {
+    public Result<Void> resetPassword(@RequestParam(name = "email") String email, @RequestParam(name = "code") String code,
+            @RequestParam(name = "newPassword") String newPassword) {
         try {
             boolean success = usersService.resetPassword(email, code, newPassword);
             return success ? Result.success("密码重置成功") : Result.error("密码重置失败");
