@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,22 +24,22 @@ import java.util.Arrays;
 
 /**
  * Spring Security 配置类
- * 
+ *
  * <p>配置应用程序的安全策略，包括认证、授权、CORS等</p>
- * 
+ *
  * @author chao
  * @version 1.0
  * @since 2025-10-06
  */
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity(prePostEnabled = true)
 @EnableConfigurationProperties(SecurityProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
-    
+
     private final RedisUtil redisUtil;
 
     private final SecurityProperties securityProperties;
@@ -65,29 +65,31 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             // 禁用CSRF保护（因为使用JWT）
-            .csrf().disable()
+            .csrf(csrf -> csrf.disable())
             // 启用CORS
-            .cors().and()
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // 配置会话管理为无状态
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 配置请求授权
-            .authorizeRequests()
+            .authorizeHttpRequests(auth -> auth
                 // 公开访问的接口
-                .antMatchers(
+                .requestMatchers(
                     securityProperties.getPublicEndpoints().toArray(String[]::new)
                 ).permitAll()
                 // 管理员接口
-                .antMatchers(
+                .requestMatchers(
                     securityProperties.getAdminEndpoints().toArray(String[]::new)
                 ).hasRole("ADMIN")
                 // 其他所有请求都需要认证
-                .anyRequest().authenticated().and()
+                .anyRequest().authenticated()
+            )
             // 添加JWT认证过滤器
             .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class)
             // 配置异常处理
-            .exceptionHandling()
+            .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-                .accessDeniedHandler(new JwtAccessDeniedHandler());
+                .accessDeniedHandler(new JwtAccessDeniedHandler())
+            );
 
         return http.build();
     }
