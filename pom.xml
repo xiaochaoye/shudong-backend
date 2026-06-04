@@ -136,7 +136,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.chao.shudongbackend.ShudongBackendApplication</mainClass>
+                    <mainClass>com.shudong.ShudongApplication</mainClass>
                     <skip>false</skip>
                 </configuration>
                 <executions>

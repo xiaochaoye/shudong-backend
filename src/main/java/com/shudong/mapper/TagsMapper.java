@@ -1,0 +1,22 @@
+package com.shudong.mapper;
+
+import com.shudong.model.entity.Tags;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+/**
+* @author test
+* @description 针对表【tags(标签表，用于给帖子打标签)】的数据库操作Mapper
+* @createDate 2025-10-05 23:04:30
+* @Entity com.chao.shudongbackend.model.entity.Tags
+*/
+@Mapper
+public interface TagsMapper extends BaseMapper<Tags> {
+
+}
+
+
+
+
