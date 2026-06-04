@@ -1,4 +1,4 @@
-package com.shudong.config;
+package com.shudong.common.config;
 
 import com.shudong.exception.JwtAccessDeniedHandler;
 import com.shudong.utils.JwtUtil;

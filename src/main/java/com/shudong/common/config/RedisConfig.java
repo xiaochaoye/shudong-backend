@@ -1,4 +1,4 @@
-package com.shudong.config;
+package com.shudong.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

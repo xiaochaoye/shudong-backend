@@ -1,4 +1,4 @@
-package com.shudong.config;
+package com.shudong.common.config;
 
 import com.shudong.model.dto.Result;
 import com.fasterxml.jackson.databind.ObjectMapper;
