@@ -72,8 +72,8 @@
         <!-- Mybatis-Plus 启动器 -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.5.14</version>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.15</version>
         </dependency>
 
         <!-- 腾讯云cos存储桶 -->
