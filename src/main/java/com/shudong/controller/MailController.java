@@ -14,6 +14,9 @@ import com.shudong.service.MailService;
 
 import org.springframework.web.bind.annotation.RequestBody;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/email")
 public class MailController {
@@ -35,10 +38,10 @@ public class MailController {
 
         try {
             mailService.sendHtmlEmail(to, "来自树洞的回复", message, from);
-            System.out.println("发送成功");
+            log.info("邮件发送成功");
             return Result.success("邮件发送成功");
         } catch (MailSendException e) {
-            System.out.println("失败原因：" + e.getMessage());
+            log.error("邮件发送失败，原因：{}", e.getMessage(), e);
             return Result.error("邮件发送失败");
         }
     }

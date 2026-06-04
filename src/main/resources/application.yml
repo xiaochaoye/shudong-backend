@@ -88,6 +88,8 @@ security:
     - "/doc.html"                 # Knife4j文档
     - "/webjars/**"               # Knife4j静态资源
     - "/v3/api-docs/**"           # OpenAPI文档
+    - "/swagger-ui/**"            # SpringDoc Swagger UI静态资源
+    - "/swagger-ui.html"          # SpringDoc Swagger UI页面
     - "/favicon.ico"              # 网站图标          
     - "/error"                    # 错误页面
     - "/email/**"                 # 发送安慰邮件接口（后面需弃用）
