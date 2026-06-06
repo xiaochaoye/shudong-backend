@@ -182,4 +182,27 @@ public class RedisUtil {
     public void expire(String key, long seconds) {
         stringRedisTemplate.expire(key, seconds, TimeUnit.SECONDS);
     }
+
+    private static final String REFRESH_TOKEN_PREFIX = "refresh:";
+
+    public void setRefreshToken(String email, String refreshToken, long expirationSeconds) {
+        String key = REFRESH_TOKEN_PREFIX + email;
+        set(key, refreshToken, expirationSeconds);
+    }
+
+    public String getRefreshToken(String email) {
+        String key = REFRESH_TOKEN_PREFIX + email;
+        Object token = get(key);
+        return token != null ? token.toString() : null;
+    }
+
+    public void deleteRefreshToken(String email) {
+        String key = REFRESH_TOKEN_PREFIX + email;
+        delete(key);
+    }
+
+    public boolean validateRefreshToken(String email, String token) {
+        String stored = getRefreshToken(email);
+        return stored != null && stored.equals(token);
+    }
 }
