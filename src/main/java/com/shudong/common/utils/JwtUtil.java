@@ -41,6 +41,13 @@ public class JwtUtil {
     @Value("${jwt.prefix:Bearer }")
     private String prefix;
 
+    private static final String TOKEN_TYPE_ACCESS = "access";
+    private static final String TOKEN_TYPE_REFRESH = "refresh";
+    private static final String CLAIM_TYPE = "type";
+
+    @Value("${jwt.refresh-expiration:604800000}")
+    private Long refreshExpiration;
+
     /**
      * 生成JWT令牌
      *
@@ -51,7 +58,8 @@ public class JwtUtil {
     public String generateToken(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        return createToken(claims, email);
+        claims.put(CLAIM_TYPE, TOKEN_TYPE_ACCESS);
+        return createToken(claims, email, expiration);
     }
 
     /**
@@ -97,16 +105,16 @@ public class JwtUtil {
      * @param subject 主题（用户名）
      * @return JWT令牌
      */
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, long expirationMs) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
+        Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
-            .claims(claims)            
-            .subject(subject)          
-            .issuedAt(now)             
-            .expiration(expiryDate)    
-            .signWith(getSigningKey()) 
+            .claims(claims)
+            .subject(subject)
+            .issuedAt(now)
+            .expiration(expiryDate)
+            .signWith(getSigningKey())
             .compact();
     }
 
@@ -154,21 +162,41 @@ public class JwtUtil {
     }
 
     /**
-     * 刷新令牌
+     * 生成刷新令牌
      *
-     * @param token 原令牌
-     * @return 新令牌
+     * @param email 用户邮箱（唯一）
+     * @param role  用户角色
+     * @return 刷新令牌
      */
-    public String refreshToken(String token) {
+    public String generateRefreshToken(String email, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        claims.put(CLAIM_TYPE, TOKEN_TYPE_REFRESH);
+        return createToken(claims, email, refreshExpiration);
+    }
+
+    /**
+     * 判断令牌是否为刷新令牌
+     *
+     * @param token JWT令牌
+     * @return 是否为刷新令牌
+     */
+    public boolean isRefreshToken(String token) {
         try {
             Claims claims = getClaimsFromToken(token);
-            String email = claims.getSubject();
-            String role = claims.get("role", String.class);
-            return generateToken(email, role);
+            return TOKEN_TYPE_REFRESH.equals(claims.get(CLAIM_TYPE, String.class));
         } catch (Exception e) {
-            log.error("刷新令牌失败: {}", e.getMessage());
-            throw new RuntimeException("令牌刷新失败");
+            return false;
         }
+    }
+
+    /**
+     * 获取刷新令牌过期时间
+     *
+     * @return 刷新令牌过期时间（毫秒）
+     */
+    public Long getRefreshExpiration() {
+        return refreshExpiration;
     }
 
     /**
