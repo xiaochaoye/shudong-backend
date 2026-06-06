@@ -1,8 +1,9 @@
 package com.shudong.common.config;
 
-import com.shudong.exception.JwtAccessDeniedHandler;
-import com.shudong.utils.JwtUtil;
-import com.shudong.utils.RedisUtil;
+import com.shudong.common.exception.JwtAccessDeniedHandler;
+import com.shudong.common.utils.JwtUtil;
+import com.shudong.common.utils.RedisUtil;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;

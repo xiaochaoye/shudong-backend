@@ -52,9 +52,30 @@ springdoc:
   api-docs:
     enabled: true
   group-configs:
-    - group: 'default'
+    - group: 'admin'
+      display-name: '后台管理'
       paths-to-match: '/**'
-      packages-to-scan: com.shudong.controller
+      packages-to-scan: com.shudong.admin.controller
+
+    - group: 'post'
+      display-name: '帖子模块'
+      paths-to-match: '/**'
+      packages-to-scan: com.shudong.post.controller
+
+    - group: 'pick'
+      display-name: '拾取模块'
+      paths-to-match: '/**'
+      packages-to-scan: com.shudong.pick.controller
+
+    - group: 'user'
+      display-name: '用户模块'
+      paths-to-match: '/**'
+      packages-to-scan: com.shudong.user.controller
+
+    - group: 'message'
+      display-name: '消息模块'
+      paths-to-match: '/**'
+      packages-to-scan: com.shudong.message.controller    
 knife4j:
   enable: true
   setting:

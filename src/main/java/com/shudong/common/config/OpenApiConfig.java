@@ -19,10 +19,10 @@ public class OpenApiConfig {
                                 .version("1.0.0")                
                                 .contact(new Contact()
                                         .name("Chao")
-                                        .url("https://github.com/某某")
-                                        .email("xxxxxx@qq.com")))
+                                        .url("https://github.com/xiaochaye")
+                                        .email("2861184979@qq.com")))
                                 .externalDocs(new ExternalDocumentation()
                                         .description("项目使用文档")
-                                        .url("https://github.com/chao/shudong-backend#readme"));
+                                        .url("https://github.com/xiaochaoye/shudong-backend#readme"));
         }
 }

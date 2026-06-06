@@ -1,7 +1,8 @@
 package com.shudong.common.config;
 
-import com.shudong.model.dto.Result;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shudong.common.response.Result;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
