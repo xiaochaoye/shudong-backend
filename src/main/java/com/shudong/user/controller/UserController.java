@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -21,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shudong.common.response.Result;
+import com.shudong.common.utils.CookieUtil;
 import com.shudong.common.utils.JwtUtil;
 import com.shudong.common.utils.RedisUtil;
 import com.shudong.user.dto.LoginRequestDTO;
@@ -41,6 +43,8 @@ public class UserController {
     private final JwtUtil jwtUtil;
 
     private final RedisUtil redisUtil;
+
+    private final CookieUtil cookieUtil;
 
     private final HttpServletRequest request;
 
@@ -84,7 +88,8 @@ public class UserController {
      * @return 登录结果
      */
     @PostMapping("/login")
-    public Result<Map<String, Object>> login(@RequestBody @Valid LoginRequestDTO request) {
+    public Result<Map<String, Object>> login(@RequestBody @Valid LoginRequestDTO request,
+                                              HttpServletResponse response) {
         try {
             Users user = usersService.login(request);
 
@@ -92,13 +97,22 @@ public class UserController {
             String role = user.getIsAdmin() == 1 ? "R_ADMIN" : "R_USER";
             String token = jwtUtil.generateToken(user.getEmail(), role);
 
-            // 创建响应Map
-            Map<String, Object> response = new HashMap<>();
-            response.put("token", token);
-            UserVO userVO = convertToUserVO(user);
-            response.put("user", userVO);
+            // 生成 Refresh Token
+            String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), role);
 
-            return Result.success("登录成功", response);
+            // 存储 Refresh Token 到 Redis（7天）
+            redisUtil.setRefreshToken(user.getEmail(), refreshToken, jwtUtil.getRefreshExpiration() / 1000);
+
+            // 通过 HttpOnly Cookie 返回 Refresh Token
+            cookieUtil.addRefreshTokenCookie(response, refreshToken);
+
+            // 创建响应Map
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("token", token);
+            UserVO userVO = convertToUserVO(user);
+            responseData.put("user", userVO);
+
+            return Result.success("登录成功", responseData);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
@@ -185,7 +199,7 @@ public class UserController {
      * @return 登出结果
      */
     @PostMapping("/logout")
-    public Result<Void> logout() {
+    public Result<Void> logout(HttpServletResponse response) {
         try {
             // 从请求头中获取JWT令牌（登出时需要令牌本身加入黑名单）
             String token = getJwtFromRequest();
@@ -204,12 +218,80 @@ public class UserController {
             // 将令牌加入黑名单，设置与令牌剩余时间相同的TTL
             redisUtil.addToBlacklist(token, remainingTime);
 
+            // 删除 Redis 中的 Refresh Token
+            String email = jwtUtil.getEmailFromToken(token);
+            redisUtil.deleteRefreshToken(email);
+
+            // 清除 HttpOnly Cookie
+            cookieUtil.clearRefreshTokenCookie(response);
+
             log.info("用户登出成功 - 令牌已加入黑名单，剩余时间: {}秒", remainingTime);
             return Result.success("登出成功");
 
         } catch (Exception e) {
             log.error("用户登出失败: {}", e.getMessage());
             return Result.error("登出失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 刷新 Access Token
+     */
+    @PostMapping("/refresh")
+    public Result<Map<String, Object>> refresh(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            // 从 Cookie 中获取 Refresh Token
+            String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
+            if (refreshToken == null) {
+                return Result.error(401, "缺少 Refresh Token");
+            }
+
+            // 验证 JWT 签名和有效期
+            if (!jwtUtil.validateToken(refreshToken)) {
+                cookieUtil.clearRefreshTokenCookie(response);
+                return Result.error(401, "Refresh Token 无效或已过期");
+            }
+
+            // 确认是 Refresh Token 类型
+            if (!jwtUtil.isRefreshToken(refreshToken)) {
+                cookieUtil.clearRefreshTokenCookie(response);
+                return Result.error(401, "无效的 Token 类型");
+            }
+
+            // 从 Token 中提取用户信息
+            String email = jwtUtil.getEmailFromToken(refreshToken);
+            String role = jwtUtil.getRoleFromToken(refreshToken);
+
+            // 校验 Redis 中存储的 Refresh Token 是否匹配
+            if (!redisUtil.validateRefreshToken(email, refreshToken)) {
+                // Token 不匹配，说明可能被盗用（复用已轮转的旧 Token）
+                redisUtil.deleteRefreshToken(email);
+                cookieUtil.clearRefreshTokenCookie(response);
+                log.warn("检测到 Refresh Token 复用，已吊销该用户所有 Refresh Token - email: {}", email);
+                return Result.error(401, "Refresh Token 已失效，请重新登录");
+            }
+
+            // 签发新的 Access Token
+            String newAccessToken = jwtUtil.generateToken(email, role);
+
+            // 签发新的 Refresh Token（轮转）
+            String newRefreshToken = jwtUtil.generateRefreshToken(email, role);
+
+            // 更新 Redis 中的 Refresh Token
+            redisUtil.setRefreshToken(email, newRefreshToken, jwtUtil.getRefreshExpiration() / 1000);
+
+            // 设置新的 Cookie
+            cookieUtil.addRefreshTokenCookie(response, newRefreshToken);
+
+            // 返回新的 Access Token
+            Map<String, Object> data = new HashMap<>();
+            data.put("token", newAccessToken);
+
+            return Result.success("刷新成功", data);
+        } catch (Exception e) {
+            log.error("刷新 Token 失败: {}", e.getMessage());
+            cookieUtil.clearRefreshTokenCookie(response);
+            return Result.error(401, "刷新失败，请重新登录");
         }
     }
 
