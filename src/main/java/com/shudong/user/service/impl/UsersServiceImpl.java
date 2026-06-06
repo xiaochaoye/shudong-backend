@@ -5,9 +5,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shudong.user.dto.LoginRequestDTO;
 import com.shudong.user.dto.RegisterRequestDTO;
 import com.shudong.user.dto.UserRequestDTO;
+import com.shudong.user.entity.Devices;
 import com.shudong.user.entity.Users;
 import com.shudong.user.mapper.UsersMapper;
 import com.shudong.user.service.UsersService;
+import com.shudong.user.service.UserSettingsService;
+import com.shudong.user.service.DevicesService;
 import com.shudong.common.exception.BusinessException;
 import com.shudong.common.utils.PasswordUtil;
 import com.shudong.common.utils.RedisUtil;
@@ -15,16 +18,19 @@ import com.shudong.common.utils.UploadUtil;
 import com.shudong.message.service.MailService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 
 /**
 * @author test
 * @description 针对表【users(用户表，存储注册用户信息)】的数据库操作Service实现
 */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
@@ -38,6 +44,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
 
     private final UploadUtil uploadUtil;
 
+    private final UserSettingsService userSettingsService;
+
+    private final DevicesService devicesService;
+
     @Override
     public boolean sendRegisterCode(String email) {
         // 检查邮箱是否已注册
@@ -48,12 +58,32 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
             throw new BusinessException("该邮箱已被注册");
         }
 
+        // 频率限制：同一邮箱每天最多获取5次验证码（先检查，更严格的限制在前）
+        String dailyCountKey = "register:daily:" + email + ":" + java.time.LocalDate.now();
+        long dailyCount = redisUtil.incr(dailyCountKey, 1);
+        if (dailyCount == 1) {
+            redisUtil.expire(dailyCountKey, 86400);
+        }
+        if (dailyCount > 5) {
+            redisUtil.decr(dailyCountKey, 1);
+            throw new BusinessException("今日获取验证码次数已达上限，请明天再试");
+        }
+
+        // 频率限制：1分钟内不能重复获取（原子操作，SET NX EX）
+        String lastRequestKey = "register:limit:" + email;
+        Boolean isFirstRequest = redisUtil.setIfAbsent(lastRequestKey, "1", 60);
+        if (!isFirstRequest) {
+            // 分钟冷却被触发，回退每日计数
+            redisUtil.decr(dailyCountKey, 1);
+            throw new BusinessException("操作过于频繁，请1分钟后再试");
+        }
+
         // 生成验证码
         String code = passwordUtil.generateVerificationCode();
-        
+
         // 存储验证码到Redis
         redisUtil.setVerificationCode(email, code, "register");
-        
+
         try {
             mailService.sendVerificationEmail(email, "树洞 - 注册验证码", code);
             return true;
@@ -87,6 +117,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         user.setEmail(request.getEmail());
         user.setUsername(passwordUtil.generateUsername(request.getEmail()));
         user.setPasswordHash(passwordUtil.encodePassword(request.getPassword()));
+        user.setAnonymousAvatar("https://tdesign.gtimg.com/site/avatar.jpg");
         user.setCreatedAt(new Date());
         user.setLastLoginAt(new Date());
         user.setIsAdmin(0);
@@ -95,6 +126,14 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         boolean saved = this.save(user);
         if (!saved) {
             throw new BusinessException("注册失败，请稍后重试");
+        }
+
+        // 创建默认用户设置
+        try {
+            userSettingsService.createDefaultSettings(user.getId());
+        } catch (Exception e) {
+            // 设置创建失败不影响注册流程，记录日志即可
+            log.warn("创建用户默认设置失败，userId={}: {}", user.getId(), e.getMessage());
         }
 
         // 删除已使用的验证码
@@ -109,7 +148,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("email", request.getEmail());
         Users user = this.getOne(queryWrapper);
-        
+
         if (user == null) {
             throw new BusinessException("邮箱或密码错误");
         }
@@ -127,6 +166,34 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         // 更新最后登录时间
         user.setLastLoginAt(new Date());
         this.updateById(user);
+
+        // 注册或更新设备信息（仅当客户端提供了有效 deviceId 时）
+        String deviceId = request.getDeviceId();
+        if (deviceId != null && !deviceId.trim().isEmpty()) {
+            try {
+                String deviceName = request.getDeviceName() != null ? request.getDeviceName() : "未知设备";
+                String userAgent = request.getUserAgent() != null ? request.getUserAgent() : "";
+                String ipAddress = request.getIpAddress() != null ? request.getIpAddress() : "";
+
+                List<Devices> existingDevices = devicesService.getDevicesByUserId(user.getId());
+                boolean deviceExists = existingDevices.stream()
+                    .anyMatch(d -> deviceId.equals(d.getDeviceId()) && "ACTIVE".equals(d.getDeviceStatus()));
+
+                if (deviceExists) {
+                    Devices existingDevice = existingDevices.stream()
+                        .filter(d -> deviceId.equals(d.getDeviceId()))
+                        .findFirst()
+                        .orElse(null);
+                    if (existingDevice != null) {
+                        devicesService.updateLastLogin(existingDevice.getId());
+                    }
+                } else {
+                    devicesService.registerDevices(user.getId(), deviceId, deviceName, userAgent, ipAddress);
+                }
+            } catch (Exception e) {
+                log.warn("用户登录时设备注册失败，userId={}: {}", user.getId(), e.getMessage());
+            }
+        }
 
         return user;
     }

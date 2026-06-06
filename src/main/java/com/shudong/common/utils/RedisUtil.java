@@ -161,8 +161,21 @@ public class RedisUtil {
     }
 
     /**
+     * 设置缓存（仅在key不存在时设置）
+     *
+     * @param key   键
+     * @param value 值
+     * @param time  过期时间（秒）
+     * @return 是否设置成功（true表示key不存在并成功设置，false表示key已存在）
+     */
+    public Boolean setIfAbsent(String key, Object value, long time) {
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(key, value, time, TimeUnit.SECONDS);
+        return result != null && result;
+    }
+
+    /**
      * 设置过期时间（秒）
-     * 
+     *
      * @param key     键
      * @param seconds 过期时间（秒）
      */

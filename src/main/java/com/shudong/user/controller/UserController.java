@@ -28,6 +28,7 @@ import com.shudong.user.dto.RegisterRequestDTO;
 import com.shudong.user.dto.UserRequestDTO;
 import com.shudong.user.entity.Users;
 import com.shudong.user.service.UsersService;
+import com.shudong.user.vo.UserVO;
 
 @Slf4j
 @RestController
@@ -61,15 +62,16 @@ public class UserController {
 
     /**
      * 用户注册
-     * 
+     *
      * @param request 注册请求
      * @return 注册结果
      */
     @PostMapping("/register")
-    public Result<String> register(@RequestBody @Valid RegisterRequestDTO request) {
+    public Result<UserVO> register(@RequestBody @Valid RegisterRequestDTO request) {
         try {
             Users user = usersService.register(request);
-            return Result.success("注册成功", user.getEmail());
+            UserVO userVO = convertToUserVO(user);
+            return Result.success("注册成功", userVO);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
@@ -77,7 +79,7 @@ public class UserController {
 
     /**
      * 用户登录
-     * 
+     *
      * @param request 登录请求
      * @return 登录结果
      */
@@ -93,6 +95,8 @@ public class UserController {
             // 创建响应Map
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
+            UserVO userVO = convertToUserVO(user);
+            response.put("user", userVO);
 
             return Result.success("登录成功", response);
         } catch (Exception e) {
@@ -245,6 +249,30 @@ public class UserController {
             // 如果计算失败，使用默认的1小时过期时间
             return 3600;
         }
+    }
+
+    /**
+     * 将Users实体转换为UserVO视图对象
+     *
+     * @param user 用户实体
+     * @return 用户视图对象
+     */
+    private UserVO convertToUserVO(Users user) {
+        if (user == null) {
+            return null;
+        }
+        UserVO userVO = new UserVO();
+        userVO.setId(user.getId());
+        userVO.setEmail(user.getEmail());
+        userVO.setUsername(user.getUsername());
+        userVO.setAvatar(user.getAvatar());
+        userVO.setAnonymousName(user.getAnonymousName());
+        userVO.setAnonymousAvatar(user.getAnonymousAvatar());
+        userVO.setIsAdmin(user.getIsAdmin());
+        userVO.setRecordStatus(user.getRecordStatus());
+        userVO.setCreatedAt(user.getCreatedAt());
+        userVO.setLastLoginAt(user.getLastLoginAt());
+        return userVO;
     }
 
 }

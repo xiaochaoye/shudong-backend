@@ -13,4 +13,24 @@ public class LoginRequestDTO {
 
     @NotBlank(message = "密码不能为空")
     private String password;
+
+    /**
+     * 设备唯一标识（可选）
+     */
+    private String deviceId;
+
+    /**
+     * 设备名称（可选）
+     */
+    private String deviceName;
+
+    /**
+     * 用户代理字符串（可选）
+     */
+    private String userAgent;
+
+    /**
+     * IP地址（可选）
+     */
+    private String ipAddress;
 }
