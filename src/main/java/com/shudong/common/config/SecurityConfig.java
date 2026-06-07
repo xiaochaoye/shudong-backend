@@ -3,6 +3,7 @@ package com.shudong.common.config;
 import com.shudong.common.exception.JwtAccessDeniedHandler;
 import com.shudong.common.utils.JwtUtil;
 import com.shudong.common.utils.RedisUtil;
+import com.shudong.user.service.UsersService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +43,8 @@ public class SecurityConfig {
     private final RedisUtil redisUtil;
 
     private final SecurityProperties securityProperties;
+
+    private final UsersService usersService;
 
     /**
      * 密码编码器
@@ -83,7 +86,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             // 添加JWT认证过滤器
-            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, redisUtil, usersService), UsernamePasswordAuthenticationFilter.class)
             // 配置异常处理
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint())

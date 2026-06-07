@@ -89,7 +89,7 @@ jwt:
   expiration: 7200000              # Access Token 有效期：2 小时（毫秒）
   refresh-expiration: 604800000    # Refresh Token 有效期：7 天（毫秒）
   header: Authorization
-  prefix: Bearer
+  prefix: "Bearer "
 
 # Spring Security配置
 security:
@@ -102,23 +102,19 @@ security:
     allow-credentials: true
     max-age: 3600
   public-endpoints:               # 添加接口前去掉 "/api"
-    - "/auth/**"                  # 认证相关接口
-    - "/users/**"                 # 用户相关接口
-    - "/users/register/**"        # 用户注册相关接口
-    - "/users/login"              # 用户登录接口
-    - "/users/refresh"            # 刷新Token接口
-    - "/users/forgot-password/**" # 忘记密码相关接口
-    - "/posts/public/**"          # 公开帖子接口
-    - "/comments/public/**"       # 公开评论接口
     - "/doc.html"                 # Knife4j文档
     - "/webjars/**"               # Knife4j静态资源
     - "/v3/api-docs/**"           # OpenAPI文档
     - "/swagger-ui/**"            # SpringDoc Swagger UI静态资源
     - "/swagger-ui.html"          # SpringDoc Swagger UI页面
     - "/favicon.ico"              # 网站图标
+    - "/users/**"                 # 用户相关接口
+    - "/users/register/**"        # 用户注册相关接口
+    - "/users/login"              # 用户登录接口
+    - "/users/refresh"            # 刷新Token接口
+    - "/users/forgot-password/**" # 忘记密码相关接口
     - "/error"                    # 错误页面
     - "/email/**"                 # 发送安慰邮件接口（后面需弃用）
-    - "/wishes/stats"             # 许愿池统计信息（总数、已实现数量、未实现数量）
   admin-endpoints:
     - "/admin/**"
 

@@ -23,7 +23,7 @@ public class ResonancesServiceImpl extends ServiceImpl<ResonancesMapper, Resonan
         Resonances resonance = new Resonances();
         resonance.setUserId(userId);
         resonance.setPostId(postId);
-        resonance.setResonanceType(type);;
+        resonance.setResonanceType(type);
         this.save(resonance);
     }
 
