@@ -1,78 +1,58 @@
 package com.shudong.pick.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shudong.common.utils.RedisUtil;
+import com.shudong.pick.dto.PickResponse;
+import com.shudong.pick.entity.PickConfigs;
 import com.shudong.pick.entity.PickRecords;
+import com.shudong.pick.mapper.PickConfigsMapper;
 import com.shudong.pick.mapper.PickRecordsMapper;
 import com.shudong.pick.service.PickService;
+import com.shudong.post.dto.PostResponse;
 import com.shudong.post.entity.Posts;
 import com.shudong.post.mapper.PostsMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @author test
- * @description 拾取服务实现
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PickServiceImpl implements PickService {
 
     private final PickRecordsMapper pickRecordMapper;
+    private final PickConfigsMapper pickConfigsMapper;
     private final PostsMapper postsMapper;
     private final RedisUtil redisUtil;
+    private final RestTemplate restTemplate;
 
-    /**
-     * 每日拾取上限
-     */
-    private static final int DAILY_PICK_LIMIT = 20;
-
-    /**
-     * 夜间拾取上限
-     */
-    private static final int NIGHT_PICK_LIMIT = 40;
-
-    /**
-     * 随机拾取上限
-     */
-    private static final int RANDOM_PICK_LIMIT = 10;
+    private static final String SAYING_API = "https://uapis.cn/api/v1/saying";
+    private static final int NIGHT_START_HOUR = 23;
+    private static final int NIGHT_END_HOUR = 6;
+    private static final int MAX_PICK_LIMIT = 10;
 
     @Override
-    public List<Posts> dailyPick(Long userId, int limit) {
-        if (isRateLimited(userId, "daily")) {
-            return Collections.emptyList();
-        }
-        List<Posts> posts = pickPosts(userId, limit, "daily");
-        recordPick(userId, posts, "daily");
-        return posts;
-    }
+    public PickResponse pickPost(Long userId, int limit) {
+        limit = Math.max(1, Math.min(limit, MAX_PICK_LIMIT));
 
-    @Override
-    public List<Posts> nightPick(Long userId, int limit) {
-        if (isRateLimited(userId, "night")) {
-            return Collections.emptyList();
+        if (isRateLimited(userId)) {
+            return createEmptyResponseWithSaying("今日拾取次数已达上限");
         }
-        List<Posts> posts = pickPosts(userId, limit, "night");
-        recordPick(userId, posts, "night");
-        return posts;
-    }
-
-    @Override
-    public List<Posts> randomPick(Long userId, int limit) {
-        if (isRateLimited(userId, "random")) {
-            return Collections.emptyList();
+        List<Posts> posts = pickPosts(userId, limit);
+        if (posts.isEmpty()) {
+            return createEmptyResponseWithSaying(null);
         }
-        List<Posts> posts = pickPosts(userId, limit, "random");
-        recordPick(userId, posts, "random");
-        return posts;
+        List<PickRecords> records = recordPick(userId, posts);
+        return convertToResponse(records, posts);
     }
 
     @Override
@@ -87,56 +67,55 @@ public class PickServiceImpl implements PickService {
     }
 
     @Override
-    public boolean isRateLimited(Long userId, String pickType) {
-        int limit;
-        switch (pickType) {
-            case "daily":
-                limit = DAILY_PICK_LIMIT;
-                break;
-            case "night":
-                limit = NIGHT_PICK_LIMIT;
-                break;
-            case "random":
-                limit = RANDOM_PICK_LIMIT;
-                break;
-            default:
-                limit = DAILY_PICK_LIMIT;
-        }
-        int count = getTodayPickCount(userId, pickType);
+    public boolean isRateLimited(Long userId) {
+        int limit = getPickLimit();
+        int count = getTodayPickCount(userId);
         return count >= limit;
     }
 
     @Override
-    public int getTodayPickCount(Long userId, String pickType) {
-        String key = "pick:" + pickType + ":" + userId + ":" + LocalDate.now();
+    public int getTodayPickCount(Long userId) {
+        String key = "pick:" + userId + ":" + LocalDate.now();
         Object count = redisUtil.get(key);
         if (count == null) {
-            // 从数据库查询今日拾取次数
             Date today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
             QueryWrapper<PickRecords> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("user_id", userId)
-                    .eq("pick_type", pickType)
                     .ge("picked_at", today);
             Long dbCount = pickRecordMapper.selectCount(queryWrapper);
             int result = dbCount != null ? dbCount.intValue() : 0;
-            // 缓存到当天结束
             redisUtil.set(key, result, getSecondsUntilEndOfDay());
             return result;
         }
         return Integer.parseInt(count.toString());
     }
 
-    /**
-     * 组合策略算法：未被回应优先 + 时间衰减 + 去重
-     */
-    private List<Posts> pickPosts(Long userId, int limit, String pickType) {
-        // 1. 获取用户已拾取的帖子ID列表（去重）
+    @Override
+    public String testSaying() {
+        return fetchSaying();
+    }
+
+    private int getPickLimit() {
+        PickConfigs config = pickConfigsMapper.selectById(1);
+        boolean isNight = isNightTime();
+        if (isNight) {
+            return config != null && config.getNightLimit() != null ? config.getNightLimit() : 40;
+        }
+        return config != null && config.getDailyLimit() != null ? config.getDailyLimit() : 20;
+    }
+
+    private boolean isNightTime() {
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        return hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR;
+    }
+
+    private List<Posts> pickPosts(Long userId, int limit) {
         Set<Long> pickedPostIds = getPickedPostIds(userId);
 
-        // 2. 获取所有可拾取的帖子（排除已删除和已拾取的）
         QueryWrapper<Posts> queryWrapper = new QueryWrapper<>();
         queryWrapper.isNull("deleted_at")
-                .eq("is_published", 1)
+                .eq("post_status", "PUBLISHED")
+                .ne("user_id", userId)
                 .notIn("id", pickedPostIds.isEmpty() ? Collections.singletonList(-1L) : pickedPostIds)
                 .orderByDesc("created_at");
         List<Posts> allPosts = postsMapper.selectList(queryWrapper);
@@ -145,7 +124,6 @@ public class PickServiceImpl implements PickService {
             return Collections.emptyList();
         }
 
-        // 3. 组合策略排序
         List<PostScore> scoredPosts = allPosts.stream()
                 .map(post -> new PostScore(post, calculateScore(post, userId)))
                 .sorted(Comparator.comparingDouble(PostScore::getScore).reversed())
@@ -157,47 +135,35 @@ public class PickServiceImpl implements PickService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 计算帖子得分：未被回应优先 + 时间衰减
-     */
     private double calculateScore(Posts post, Long userId) {
         double score = 0.0;
 
-        // 1. 未被回应优先：检查该帖子是否被当前用户拾取过且未回应（resonanced_at 为 null 表示未回应）
+        // 未被回应优先
         QueryWrapper<PickRecords> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId)
                 .eq("post_id", post.getId())
                 .isNull("resonanced_at");
         Long unrepliedCount = pickRecordMapper.selectCount(queryWrapper);
         if (unrepliedCount != null && unrepliedCount > 0) {
-            score += 100.0; // 高优先级
+            score += 100.0;
         }
 
-        // 2. 时间衰减：越新的帖子得分越高
+        // 时间衰减
         Date createdAt = post.getCreatedAt();
         if (createdAt != null) {
             long daysSinceCreated = (System.currentTimeMillis() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-            double timeDecay = Math.exp(-daysSinceCreated / 7.0); // 7天衰减周期
+            double timeDecay = Math.exp(-daysSinceCreated / 7.0);
             score += timeDecay * 50.0;
         }
 
-        // 3. 浏览数权重：浏览数适中的帖子更可能被需要回应
-        Object viewCountObj = post.getViewCount();
-        if (viewCountObj != null) {
-            try {
-                int viewCount = Integer.parseInt(viewCountObj.toString());
-                score += Math.min(viewCount / 10.0, 20.0); // 最多加20分
-            } catch (NumberFormatException e) {
-                // 忽略解析错误
-            }
+        // 浏览数权重
+        if (post.getViewCount() != null) {
+            score += Math.min(post.getViewCount() / 10.0, 20.0);
         }
 
         return score;
     }
 
-    /**
-     * 获取用户已拾取的帖子ID
-     */
     private Set<Long> getPickedPostIds(Long userId) {
         QueryWrapper<PickRecords> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
@@ -207,15 +173,11 @@ public class PickServiceImpl implements PickService {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * 记录拾取
-     */
-    private void recordPick(Long userId, List<Posts> posts, String pickType) {
-        if (posts == null || posts.isEmpty()) {
-            return;
-        }
-
+    private List<PickRecords> recordPick(Long userId, List<Posts> posts) {
         Date now = new Date();
+        String pickType = isNightTime() ? "night" : "daily";
+        List<PickRecords> records = new ArrayList<>();
+
         for (Posts post : posts) {
             PickRecords record = new PickRecords();
             record.setUserId(userId);
@@ -223,18 +185,17 @@ public class PickServiceImpl implements PickService {
             record.setPickType(pickType);
             record.setPickedAt(now);
             pickRecordMapper.insert(record);
+            records.add(record);
         }
 
-        // 更新Redis计数
-        String key = "pick:" + pickType + ":" + userId + ":" + LocalDate.now();
+        String key = "pick:" + userId + ":" + LocalDate.now();
         Object count = redisUtil.get(key);
         int newCount = (count == null) ? posts.size() : Integer.parseInt(count.toString()) + posts.size();
         redisUtil.set(key, newCount, getSecondsUntilEndOfDay());
+
+        return records;
     }
 
-    /**
-     * 获取距离当天结束的秒数
-     */
     private long getSecondsUntilEndOfDay() {
         Date now = new Date();
         Calendar calendar = Calendar.getInstance();
@@ -245,9 +206,67 @@ public class PickServiceImpl implements PickService {
         return (calendar.getTimeInMillis() - now.getTime()) / 1000;
     }
 
-    /**
-     * 帖子分数包装类
-     */
+    private PickResponse createEmptyResponseWithSaying(String message) {
+        PickResponse response = new PickResponse();
+        response.setEmpty(true);
+        response.setMessage(message);
+        String saying = fetchSaying();
+        if (saying != null) {
+            response.setSaying(saying);
+        }
+        return response;
+    }
+
+    private String fetchSaying() {
+        try {
+            String json = restTemplate.getForObject(SAYING_API, String.class);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(json);
+            if (node.has("text")) {
+                return node.get("text").asText();
+            }
+        } catch (Exception e) {
+            log.warn("获取语录失败: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private PickResponse convertToResponse(List<PickRecords> records, List<Posts> posts) {
+        PickResponse response = new PickResponse();
+        response.setEmpty(false);
+
+        List<PostResponse> postResponses = new ArrayList<>();
+        for (int i = 0; i < posts.size(); i++) {
+            Posts post = posts.get(i);
+            PickRecords record = records.get(i);
+
+            PostResponse pr = new PostResponse();
+            pr.setId(post.getId());
+            pr.setTitle(post.getTitle());
+            pr.setPostBody(post.getPostBody());
+            pr.setIsAnonymous(post.getIsAnonymous());
+            pr.setIsPrivate(post.getIsPrivate());
+            pr.setViewCount(post.getViewCount());
+            pr.setResonanceCount(post.getResonanceCount());
+            pr.setCommentCount(post.getCommentCount());
+            pr.setCreatedAt(post.getCreatedAt());
+            postResponses.add(pr);
+        }
+        response.setPosts(postResponses);
+
+        // 单条时填充 pick 级别字段
+        if (records.size() == 1) {
+            PickRecords record = records.get(0);
+            response.setPickId(record.getId());
+            response.setPostId(record.getPostId());
+            response.setPickType(record.getPickType());
+            response.setPickedAt(record.getPickedAt());
+            response.setResonancedAt(record.getResonancedAt());
+        }
+
+        return response;
+    }
+
     private static class PostScore {
         private final Posts post;
         private final double score;
