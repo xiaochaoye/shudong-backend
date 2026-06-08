@@ -114,7 +114,6 @@ security:
     - "/users/refresh"            # 刷新Token接口
     - "/users/forgot-password/**" # 忘记密码相关接口
     - "/error"                    # 错误页面
-    - "/email/**"                 # 发送安慰邮件接口（后面需弃用）
   admin-endpoints:
     - "/admin/**"
 

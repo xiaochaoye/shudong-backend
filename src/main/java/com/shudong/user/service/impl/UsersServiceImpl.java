@@ -85,7 +85,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         redisUtil.setVerificationCode(email, code, "register");
 
         try {
-            mailService.sendVerificationEmail(email, "树洞 - 注册验证码", code);
+            mailService.sendVerificationEmail(email, code);
             return true;
         } catch (Exception e) {
             throw new BusinessException("邮件发送失败：" + e.getMessage());
@@ -220,7 +220,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         redisUtil.setVerificationCode(email, code, "reset");
         
         try {
-            mailService.sendVerificationEmail(email, "树洞 - 重置密码验证码", code);
+            mailService.sendVerificationEmail(email, code);
             return true;
         } catch (Exception e) {
             throw new BusinessException("邮件发送失败：" + e.getMessage());

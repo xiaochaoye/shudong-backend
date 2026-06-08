@@ -2,6 +2,7 @@ package com.shudong.message.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shudong.common.config.SseEmitterManager;
 import com.shudong.message.entity.Notifications;
 import com.shudong.message.mapper.NotificationsMapper;
 import com.shudong.message.service.NotificationService;
@@ -23,6 +24,8 @@ import java.util.List;
 public class NotificationServiceImpl extends ServiceImpl<NotificationsMapper, Notifications>
     implements NotificationService {
 
+    private final SseEmitterManager sseEmitterManager;
+
     @Override
     public Notifications sendSystemNotification(Long userId, String title, String content, Long relatedId) {
         Notifications notification = new Notifications();
@@ -33,6 +36,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationsMapper, No
         notification.setIsRead(0);
         notification.setCreatedAt(new Date());
         this.save(notification);
+        sseEmitterManager.sendToUser(userId, notification);
         log.info("发送系统通知给用户 {}: {}", userId, title);
         return notification;
     }
@@ -47,6 +51,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationsMapper, No
         notification.setIsRead(0);
         notification.setCreatedAt(new Date());
         this.save(notification);
+        sseEmitterManager.sendToUser(userId, notification);
         log.info("发送回复通知给用户 {}: {}", userId, title);
         return notification;
     }

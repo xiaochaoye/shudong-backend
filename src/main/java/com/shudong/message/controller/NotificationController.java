@@ -1,5 +1,6 @@
 package com.shudong.message.controller;
 
+import com.shudong.common.config.SseEmitterManager;
 import com.shudong.common.response.Result;
 import com.shudong.message.entity.Notifications;
 import com.shudong.message.service.NotificationService;
@@ -7,12 +8,10 @@ import com.shudong.message.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
-/**
- * 通知管理控制器
- */
 @Slf4j
 @RestController
 @RequestMapping("/notifications")
@@ -20,13 +19,28 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final SseEmitterManager sseEmitterManager;
 
-    /**
-     * 获取当前用户的通知列表
-     *
-     * @param userId 当前用户ID（从JWT token解析）
-     * @return 通知列表
-     */
+    @GetMapping("/subscribe")
+    public SseEmitter subscribe(@RequestAttribute("userId") Long userId) {
+        SseEmitter emitter = new SseEmitter(30 * 60 * 1000L);
+
+        emitter.onCompletion(() -> sseEmitterManager.removeEmitter(userId));
+        emitter.onTimeout(() -> sseEmitterManager.removeEmitter(userId));
+        emitter.onError(e -> sseEmitterManager.removeEmitter(userId));
+
+        sseEmitterManager.addEmitter(userId, emitter);
+
+        try {
+            emitter.send(SseEmitter.event().name("connected").data("SSE连接成功"));
+        } catch (Exception e) {
+            log.warn("发送SSE初始事件失败: {}", e.getMessage());
+            emitter.complete();
+        }
+
+        return emitter;
+    }
+
     @GetMapping
     public Result<List<Notifications>> getNotifications(@RequestAttribute("userId") Long userId) {
         try {

@@ -238,8 +238,6 @@ public class PickServiceImpl implements PickService {
         List<PostResponse> postResponses = new ArrayList<>();
         for (int i = 0; i < posts.size(); i++) {
             Posts post = posts.get(i);
-            PickRecords record = records.get(i);
-
             PostResponse pr = new PostResponse();
             pr.setId(post.getId());
             pr.setTitle(post.getTitle());
