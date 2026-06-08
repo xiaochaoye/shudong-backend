@@ -1,6 +1,7 @@
 package com.shudong.post.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shudong.common.exception.BusinessException;
 import com.shudong.post.dto.CommentRequest;
@@ -68,17 +69,19 @@ public class CommentsServiceImpl extends ServiceImpl<CommentsMapper, Comments>
     }
 
     @Override
-    public List<CommentResponse> getPostComments(Long postId) {
+    public Page<CommentResponse> getPostComments(Long postId, int page, int size) {
         QueryWrapper<Comments> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("post_id", postId)
                     .eq("comment_status", "ACTIVE")
                     .orderByDesc("created_at");
 
-        List<Comments> comments = this.list(queryWrapper);
+        Page<Comments> commentPage = this.page(new Page<>(page, size), queryWrapper);
 
-        return comments.stream()
+        Page<CommentResponse> responsePage = new Page<>(commentPage.getCurrent(), commentPage.getSize(), commentPage.getTotal());
+        responsePage.setRecords(commentPage.getRecords().stream()
                 .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+        return responsePage;
     }
 
     private CommentResponse convertToResponse(Comments comment) {

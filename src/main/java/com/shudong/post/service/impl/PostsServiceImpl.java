@@ -1,6 +1,7 @@
 package com.shudong.post.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shudong.common.exception.BusinessException;
 import com.shudong.post.dto.CreatePostRequest;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,17 +90,19 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
     }
 
     @Override
-    public List<PostResponse> getUserPosts(Long userId, int page, int size) {
+    public Page<PostResponse> getUserPosts(Long userId, int page, int size) {
         QueryWrapper<Posts> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId)
                     .eq("post_status", "PUBLISHED")
                     .orderByDesc("created_at");
 
-        List<Posts> posts = this.list(queryWrapper);
+        Page<Posts> postPage = this.page(new Page<>(page, size), queryWrapper);
 
-        return posts.stream()
+        Page<PostResponse> responsePage = new Page<>(postPage.getCurrent(), postPage.getSize(), postPage.getTotal());
+        responsePage.setRecords(postPage.getRecords().stream()
                 .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+        return responsePage;
     }
 
     private PostResponse convertToResponse(Posts post) {

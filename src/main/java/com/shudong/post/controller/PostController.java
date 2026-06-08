@@ -1,5 +1,6 @@
 package com.shudong.post.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shudong.common.response.Result;
 import com.shudong.post.dto.CreatePostRequest;
 import com.shudong.post.dto.PostResponse;
@@ -10,8 +11,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -73,12 +72,12 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public Result<List<PostResponse>> getUserPosts(
+    public Result<Page<PostResponse>> getUserPosts(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            List<PostResponse> posts = postsService.getUserPosts(userId, page, size);
+            Page<PostResponse> posts = postsService.getUserPosts(userId, page, size);
             return Result.success(posts);
         } catch (Exception e) {
             log.error("获取用户帖子列表失败: {}", e.getMessage());

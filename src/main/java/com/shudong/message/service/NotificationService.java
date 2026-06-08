@@ -1,9 +1,8 @@
 package com.shudong.message.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.shudong.message.entity.Notifications;
-
-import java.util.List;
 
 /**
  * @author test
@@ -33,11 +32,13 @@ public interface NotificationService extends IService<Notifications> {
     Notifications sendReplyNotification(Long userId, Long senderId, String title, String content, Long relatedId);
 
     /**
-     * 获取用户的通知列表
+     * 获取用户的通知列表（分页）
      * @param userId 用户ID
-     * @return 通知列表
+     * @param page 页码
+     * @param size 每页条数
+     * @return 分页通知列表
      */
-    List<Notifications> getUserNotifications(Long userId);
+    Page<Notifications> getUserNotifications(Long userId, int page, int size);
 
     /**
      * 获取用户未读通知数量

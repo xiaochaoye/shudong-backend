@@ -1,5 +1,6 @@
 package com.shudong.message.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shudong.common.config.SseEmitterManager;
 import com.shudong.common.response.Result;
 import com.shudong.message.entity.Notifications;
@@ -9,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -42,12 +41,15 @@ public class NotificationController {
     }
 
     @GetMapping
-    public Result<List<Notifications>> getNotifications(@RequestAttribute("userId") Long userId) {
+    public Result<Page<Notifications>> getNotifications(
+            @RequestAttribute("userId") Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
             if (userId == null) {
                 return Result.error("用户未登录");
             }
-            List<Notifications> notifications = notificationService.getUserNotifications(userId);
+            Page<Notifications> notifications = notificationService.getUserNotifications(userId, page, size);
             return Result.success("获取通知列表成功", notifications);
         } catch (Exception e) {
             log.error("获取通知列表失败: {}", e.getMessage());
