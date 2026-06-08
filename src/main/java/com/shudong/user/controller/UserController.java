@@ -94,7 +94,7 @@ public class UserController {
             Users user = usersService.login(request);
 
             // 生成JWT token
-            String role = user.getIsAdmin() == 1 ? "R_ADMIN" : "R_USER";
+            String role = user.getIsAdmin() == 1 ? "ADMIN" : "USER";
             String token = jwtUtil.generateToken(user.getEmail(), role);
 
             // 生成 Refresh Token

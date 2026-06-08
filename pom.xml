@@ -92,6 +92,13 @@
             <version>3.5.15</version>
         </dependency>
 
+        <!-- Mybatis-Plus 分页插件依赖 (3.5.9+ 需单独引入) -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>3.5.15</version>
+        </dependency>
+
         <!-- 腾讯云cos存储桶 -->
         <dependency>
             <groupId>com.qcloud</groupId>
