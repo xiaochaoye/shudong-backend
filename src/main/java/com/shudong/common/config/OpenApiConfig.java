@@ -19,7 +19,7 @@ public class OpenApiConfig {
                                 .version("1.0.0")                
                                 .contact(new Contact()
                                         .name("Chao")
-                                        .url("https://github.com/xiaochaye")
+                                        .url("https://github.com/xiaochaoye")
                                         .email("2861184979@qq.com")))
                                 .externalDocs(new ExternalDocumentation()
                                         .description("项目使用文档")
