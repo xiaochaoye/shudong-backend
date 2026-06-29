@@ -53,21 +53,90 @@ src/main/java/com/shudong/
 
 ## API 概览
 
-所有接口前缀 `/api`，返回 `Result<T>` 统一格式。
+所有接口前缀 `/api`，返回 `Result<T>` 统一格式。共 16 个 Controller、47 个端点。
 
-| 模块 | 路径 | 核心接口 |
-|------|------|----------|
-| 用户 | `/users` | 注册·登录·注销·刷新Token·重置密码·更新资料 |
-| 设置 | `/user-settings` | 获取·更新·重置 |
-| 设备 | `/devices` | 列表·注册·停用·刷新登录 |
-| 帖子 | `/posts` | 发帖·查看(+浏览量)·编辑·软删除·用户帖子 |
-| 评论 | `/posts/{id}/comments` | 发表·删除(级联子评论)·分页列表 |
-| 共鸣 | `/resonances` | 添加·移除·按帖查询·检查状态 |
-| 收藏 | `/collections` | 添加·移除·列表·检查状态 |
-| 拾取 | `/picks` | 智能拾取·标记已回复·限额查询 |
-| 私信 | `/posts/{id}/private-reply` | 发送(进入PENDING审核) |
-| 通知 | `/notifications` | SSE订阅·列表·未读数·标记已读 |
-| 管理 | `/admin/*` | 用户/帖子/评论管理·私信审核·统计·系统配置 |
+### 用户模块
+
+| 路径 | 方法 | 接口 |
+|------|------|------|
+| `/users/register/send-code` | POST | 发送注册验证码 |
+| `/users/register` | POST | 用户注册 |
+| `/users/login` | POST | 用户登录 |
+| `/users/logout` | POST | 用户登出 |
+| `/users/refresh` | POST | 刷新 Access Token |
+| `/users/forgot-password/send-code` | POST | 发送重置密码验证码 |
+| `/users/forgot-password/reset` | POST | 重置密码 |
+| `/users/profile/update` | POST | 更新用户资料（名称/头像） |
+| `/user-settings` | GET | 获取当前用户设置 |
+| `/user-settings` | PUT | 更新用户设置 |
+| `/user-settings/reset` | POST | 重置为默认设置 |
+| `/devices` | GET | 获取当前用户设备列表 |
+| `/devices/register` | POST | 注册设备 |
+| `/devices/{deviceId}/deactivate` | PUT | 停用设备 |
+| `/devices/{deviceId}/refresh-login` | PUT | 更新设备最后登录时间 |
+
+### 帖子模块
+
+| 路径 | 方法 | 接口 |
+|------|------|------|
+| `/posts` | POST | 发帖 |
+| `/posts/{postId}` | GET | 获取帖子详情(+浏览量) |
+| `/posts/{postId}` | PUT | 编辑帖子 |
+| `/posts/{postId}` | DELETE | 软删除帖子 |
+| `/posts/user/{userId}` | GET | 获取用户帖子列表(分页) |
+| `/posts/{postId}/comments` | GET | 获取帖子评论列表(分页) |
+| `/posts/{postId}/comments` | POST | 发表评论 |
+| `/posts/{postId}/comments/{commentId}` | DELETE | 删除评论(级联子评论) |
+| `/resonances` | POST | 添加共鸣 |
+| `/resonances` | DELETE | 取消共鸣 |
+| `/resonances/post/{postId}` | GET | 获取帖子的共鸣列表 |
+| `/resonances/check` | GET | 检查当前用户是否已共鸣 |
+| `/collections` | POST | 添加收藏 |
+| `/collections` | DELETE | 取消收藏 |
+| `/collections` | GET | 获取当前用户收藏列表 |
+| `/collections/check` | GET | 检查当前用户是否已收藏 |
+
+### 拾取模块
+
+| 路径 | 方法 | 接口 |
+|------|------|------|
+| `/picks` | GET | 智能拾取帖子 |
+| `/picks/replied` | POST | 标记帖子已回应 |
+| `/picks/limit` | GET | 查询拾取频率限额 |
+| `/picks/test-saying` | GET | 测试获取语录 |
+
+### 消息模块
+
+| 路径 | 方法 | 接口 |
+|------|------|------|
+| `/posts/{postId}/private-reply` | POST | 发送私信(进入PENDING审核) |
+| `/notifications/subscribe` | GET | SSE订阅实时通知(长连接) |
+| `/notifications` | GET | 获取通知列表(分页) |
+| `/notifications/unread-count` | GET | 获取未读通知数量 |
+| `/notifications/{notificationId}/read` | PUT | 标记单条通知已读 |
+| `/notifications/read-all` | PUT | 标记所有通知已读 |
+
+### 管理模块 (`/admin`)
+
+| 路径 | 方法 | 接口 |
+|------|------|------|
+| `/admin/users` | GET | 用户列表(分页/关键词/状态筛选) |
+| `/admin/users/{userId}` | GET | 用户详情 |
+| `/admin/users/{userId}/status` | PUT | 更新用户状态(封禁/解封) |
+| `/admin/users/{userId}` | DELETE | 删除用户 |
+| `/admin/posts` | GET | 帖子列表(分页/关键词/状态筛选) |
+| `/admin/posts/{postId}` | DELETE | 软删除帖子 |
+| `/admin/comments` | GET | 评论列表(分页/按帖子筛选) |
+| `/admin/comments/{commentId}` | DELETE | 软删除评论 |
+| `/admin/reviews/pending` | GET | 待审核私信列表(分页) |
+| `/admin/reviews/{reviewId}/approve` | POST | 审核通过(触发通知+邮件) |
+| `/admin/reviews/{reviewId}/reject` | POST | 审核驳回(需提供原因) |
+| `/admin/stats/overview` | GET | 系统概览统计 |
+| `/admin/stats/users` | GET | 用户统计 |
+| `/admin/stats/posts` | GET | 帖子统计 |
+| `/admin/stats/interactions` | GET | 互动统计 |
+| `/admin/configs` | GET | 获取所有系统配置 |
+| `/admin/configs/{id}` | PUT | 更新系统配置项 |
 
 ## 认证机制
 
