@@ -2,6 +2,7 @@ package com.shudong.post.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shudong.common.response.Result;
+import com.shudong.common.utils.UploadUtil;
 import com.shudong.post.dto.CreatePostRequest;
 import com.shudong.post.dto.PostResponse;
 import com.shudong.post.dto.UpdatePostRequest;
@@ -11,6 +12,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -19,6 +24,29 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostsService postsService;
+
+    private final UploadUtil uploadUtil;
+
+    /**
+     * 上传帖子图片
+     * 编辑器中插入图片时调用，返回图片URL，由前端嵌入到postBody中
+     */
+    @PostMapping("/images")
+    public Result<Map<String, String>> uploadImage(
+            @RequestAttribute("userId") Long userId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = uploadUtil.uploadImage(file);
+            Map<String, String> data = new HashMap<>();
+            data.put("url", imageUrl);
+            return Result.success("上传成功", data);
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("图片上传失败: {}", e.getMessage());
+            return Result.error("图片上传失败");
+        }
+    }
 
     @PostMapping
     public Result<PostResponse> createPost(
