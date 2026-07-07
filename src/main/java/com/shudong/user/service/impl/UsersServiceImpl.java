@@ -20,6 +20,7 @@ import com.shudong.message.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +28,14 @@ import java.util.Date;
 import java.util.List;
 
 /**
-* @author test
-* @description 针对表【users(用户表，存储注册用户信息)】的数据库操作Service实现
-*/
+ * @author test
+ * @description 针对表【users(用户表，存储注册用户信息)】的数据库操作Service实现
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
-    implements UsersService{
+        implements UsersService {
 
     private final RedisUtil redisUtil;
 
@@ -47,6 +48,23 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
     private final UserSettingsService userSettingsService;
 
     private final DevicesService devicesService;
+
+    /**
+     * 生成基于哈希的匿名昵称
+     * 
+     * @param email 用户邮箱
+     * @return 形如 "用户_a3f2b1" 的昵称
+     */
+    public String generateAnonymousNickname(String email) {
+        String salt = "anonymous_nick_salt_shudong";
+        String raw = email.toLowerCase().trim() + ":" + salt;
+
+        // 2. SHA-256 哈希 → 取前6位十六进制
+        String hash = DigestUtils.sha256Hex(raw);
+        String suffix = hash.substring(0, 6).toUpperCase();
+
+        return "用户_" + suffix;
+    }
 
     @Override
     public boolean sendRegisterCode(String email) {
@@ -117,6 +135,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         user.setEmail(request.getEmail());
         user.setUsername(passwordUtil.generateUsername(request.getEmail()));
         user.setPasswordHash(passwordUtil.encodePassword(request.getPassword()));
+        user.setAnonymousName(generateAnonymousNickname(request.getEmail()));
         user.setAnonymousAvatar("https://tdesign.gtimg.com/site/avatar.jpg");
         user.setCreatedAt(new Date());
         user.setLastLoginAt(new Date());
@@ -177,13 +196,13 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
 
                 List<Devices> existingDevices = devicesService.getDevicesByUserId(user.getId());
                 boolean deviceExists = existingDevices.stream()
-                    .anyMatch(d -> deviceId.equals(d.getDeviceId()) && "ACTIVE".equals(d.getDeviceStatus()));
+                        .anyMatch(d -> deviceId.equals(d.getDeviceId()) && "ACTIVE".equals(d.getDeviceStatus()));
 
                 if (deviceExists) {
                     Devices existingDevice = existingDevices.stream()
-                        .filter(d -> deviceId.equals(d.getDeviceId()))
-                        .findFirst()
-                        .orElse(null);
+                            .filter(d -> deviceId.equals(d.getDeviceId()))
+                            .findFirst()
+                            .orElse(null);
                     if (existingDevice != null) {
                         devicesService.updateLastLogin(existingDevice.getId());
                     }
@@ -215,10 +234,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
 
         // 生成验证码
         String code = passwordUtil.generateVerificationCode();
-        
+
         // 存储验证码到Redis
         redisUtil.setVerificationCode(email, code, "reset");
-        
+
         try {
             mailService.sendVerificationEmail(email, code);
             return true;
@@ -239,7 +258,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("email", email);
         Users user = this.getOne(queryWrapper);
-        
+
         if (user == null) {
             throw new BusinessException("用户不存在");
         }

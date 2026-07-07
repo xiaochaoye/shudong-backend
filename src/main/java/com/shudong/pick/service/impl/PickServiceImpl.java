@@ -60,9 +60,15 @@ public class PickServiceImpl implements PickService {
         QueryWrapper<PickRecords> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("post_id", postId);
         PickRecords record = pickRecordMapper.selectOne(queryWrapper);
-        if (record != null) {
+        if (record != null && record.getResonancedAt() == null) {
             record.setResonancedAt(new Date());
             pickRecordMapper.updateById(record);
+
+            Posts post = postsMapper.selectById(postId);
+            if (post != null) {
+                post.setResonanceCount(post.getResonanceCount() == null ? 1 : post.getResonanceCount() + 1);
+                postsMapper.updateById(post);
+            }
         }
     }
 
@@ -159,6 +165,11 @@ public class PickServiceImpl implements PickService {
         // 浏览数权重
         if (post.getViewCount() != null) {
             score += Math.min(post.getViewCount() / 10.0, 20.0);
+        }
+
+        // 共鸣数权重：共鸣越多说明越打动人，适当提升优先级
+        if (post.getResonanceCount() != null) {
+            score += Math.min(post.getResonanceCount() * 5.0, 30.0);
         }
 
         return score;
