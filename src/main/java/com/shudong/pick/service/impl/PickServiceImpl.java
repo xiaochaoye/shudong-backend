@@ -177,7 +177,8 @@ public class PickServiceImpl implements PickService {
 
     private Set<Long> getPickedPostIds(Long userId) {
         QueryWrapper<PickRecords> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId);
+        queryWrapper.eq("user_id", userId)
+                .isNull("resonanced_at");
         List<PickRecords> records = pickRecordMapper.selectList(queryWrapper);
         return records.stream()
                 .map(PickRecords::getPostId)
