@@ -58,9 +58,9 @@ public class PickServiceImpl implements PickService {
     @Override
     public void markAsReplied(Long userId, Long postId) {
         QueryWrapper<PickRecords> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId).eq("post_id", postId);
+        queryWrapper.eq("user_id", userId).eq("post_id", postId).isNull("resonanced_at");
         PickRecords record = pickRecordMapper.selectOne(queryWrapper);
-        if (record != null && record.getResonancedAt() == null) {
+        if (record != null) {
             record.setResonancedAt(new Date());
             pickRecordMapper.updateById(record);
 
